@@ -1,5 +1,3 @@
-// LoginScreen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
@@ -7,7 +5,6 @@ import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
-
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -25,26 +22,18 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // --- FUNGSI LOGIN YANG TELAH DIPERBAIKI DENGAN BENAR ---
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      // Panggil login tanpa menampung hasilnya.
-      // Jika berhasil, kode ini akan selesai tanpa error.
       await authProvider.login(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      // Navigasi akan ditangani oleh MainScreenWrapper secara otomatis.
-
     } catch (e) {
-      // Jika authProvider.login() melempar error, akan ditangkap di sini.
       messenger.showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceFirst('Exception: ', '')),
@@ -56,6 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ... UI (Tidak ada perubahan)
     return Scaffold(
       body: SafeArea(
         child: Consumer<AuthProvider>(
@@ -71,32 +61,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       const Icon(Icons.two_wheeler, size: 80, color: Colors.blueAccent),
                       const SizedBox(height: 16),
-                      const Text(
-                        'Selamat Datang di Rentalin',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
+                      const Text('Selamat Datang di Rentalin', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Silakan masuk untuk melanjutkan',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
+                      const Text('Silakan masuk untuk melanjutkan', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Colors.grey)),
                       const SizedBox(height: 40),
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email_outlined),
-                        ),
+                        decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Email tidak boleh kosong';
-                          }
-                          if (!value.contains('@')) {
-                            return 'Masukkan email yang valid';
-                          }
+                          if (value == null || value.isEmpty) return 'Email tidak boleh kosong';
+                          if (!value.contains('@')) return 'Masukkan email yang valid';
                           return null;
                         },
                       ),
@@ -108,22 +83,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           labelText: 'Password',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
-                            icon: Icon(
-                              _isPasswordVisible
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _isPasswordVisible = !_isPasswordVisible;
-                              });
-                            },
+                            icon: Icon(_isPasswordVisible ? Icons.visibility_off : Icons.visibility),
+                            onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                           ),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Password tidak boleh kosong';
-                          }
+                          if (value == null || value.isEmpty) return 'Password tidak boleh kosong';
                           return null;
                         },
                       ),
@@ -136,18 +101,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         child: auth.isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 3,
-                                ),
-                              )
-                            : const Text(
-                                'Masuk',
-                                style: TextStyle(fontSize: 16),
-                              ),
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+                            : const Text('Masuk', style: TextStyle(fontSize: 16)),
                       ),
                       const SizedBox(height: 24),
                       Row(
@@ -155,15 +110,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           const Text('Belum punya akun?'),
                           TextButton(
-                            onPressed: () {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) => const RegisterScreen(),
-                              ));
-                            },
-                            child: const Text(
-                              'Daftar di sini',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
+                            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const RegisterScreen())),
+                            child: const Text('Daftar di sini', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),

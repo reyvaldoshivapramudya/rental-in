@@ -12,14 +12,12 @@ class AuthProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   UserModel? _user;
-  bool _isLoading = true;
-  String? _errorMessage;
+  bool _isLoading = true; // Loading awal saat app dibuka
 
   StreamSubscription? _authStateSubscription;
 
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
 
   AuthProvider() {
     _authStateSubscription = _authService.authStateChanges.listen(_onAuthStateChanged);
@@ -28,66 +26,74 @@ class AuthProvider with ChangeNotifier {
   Future<void> _onAuthStateChanged(firebase.User? firebaseUser) async {
     if (firebaseUser == null) {
       _user = null;
-      _isLoading = false;
+      if (_isLoading) _isLoading = false;
       notifyListeners();
       return;
     }
-    
-    _isLoading = true;
-    notifyListeners();
-
     try {
-      DocumentSnapshot doc = await _firestore
-          .collection('users')
-          .doc(firebaseUser.uid)
-          .get();
+      DocumentSnapshot doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
       if (doc.exists) {
         _user = UserModel.fromFirestore(doc);
       } else {
         _user = null;
+        await _authService.signOut();
       }
     } catch (e) {
       _user = null;
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (_isLoading) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
-  /// Melakukan proses login. Akan `throw Exception` jika gagal.
+  /// Melakukan proses login.
+  /// Akan `throw Exception` jika gagal.
   Future<void> login(String email, String password) async {
     _isLoading = true;
-    notifyListeners();
+    notifyListeners(); // Memberi tahu UI untuk menampilkan loading spinner
 
-    final loggedInUser = await _authService.signInWithEmailAndPassword(email, password);
-
-    if (loggedInUser == null) {
+    try {
+      final loggedInUser = await _authService.signInWithEmailAndPassword(email, password);
+      
+      // Jika service mengembalikan null, artinya login gagal.
+      if (loggedInUser == null) {
+        throw Exception("Email atau password yang Anda masukkan salah.");
+      }
+      // Jika berhasil, listener _onAuthStateChanged akan menangani sisanya.
+      // isLoading akan di-set false oleh listener tersebut.
+    } catch (e) {
+      // Jika terjadi error dari service atau dari throw di atas
       _isLoading = false;
-      notifyListeners();
-      throw Exception("Login gagal. Periksa kembali email dan password Anda.");
+      notifyListeners(); // Beri tahu UI untuk MENGHENTIKAN loading spinner
+      rethrow; // Lempar kembali error-nya agar bisa ditangkap oleh UI (LoginScreen)
     }
-    // Jika sukses, listener _onAuthStateChanged akan mengatur state loading dan user.
   }
 
-  /// Melakukan proses registrasi. Akan `throw Exception` jika gagal.
+  /// Melakukan proses registrasi.
+  /// Akan `throw Exception` jika gagal.
   Future<void> register(String nama, String email, String password, String nomorTelepon, String alamat) async {
     _isLoading = true;
     notifyListeners();
 
-    final registeredUser = await _authService.registerWithEmailAndPassword(nama, email, password, nomorTelepon, alamat);
+    try {
+      final registeredUser = await _authService.registerWithEmailAndPassword(nama, email, password, nomorTelepon, alamat);
 
-    if (registeredUser == null) {
+      if (registeredUser == null) {
+        throw Exception("Registrasi gagal. Email mungkin sudah terdaftar.");
+      }
+      // Jika berhasil, listener akan menangani sisanya.
+    } catch (e) {
       _isLoading = false;
       notifyListeners();
-      throw Exception("Registrasi gagal. Email mungkin sudah terdaftar.");
+      rethrow;
     }
-    // Jika sukses, listener _onAuthStateChanged akan mengatur state loading dan user.
   }
 
   Future<void> logout() async {
     await _authService.signOut();
-    _user = null;
-    notifyListeners();
+    // User akan null & loading akan false via listener
   }
 
   @override

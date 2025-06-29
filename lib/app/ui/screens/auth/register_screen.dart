@@ -4,12 +4,12 @@ import '../../../providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
-
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  // ... (semua controller)
   final _formKey = GlobalKey<FormState>();
   final _namaController = TextEditingController();
   final _emailController = TextEditingController();
@@ -21,6 +21,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
+    // ... (dispose semua controller)
     _namaController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -30,7 +31,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  // --- FUNGSI REGISTER YANG TELAH DIPERBAIKI ---
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
     if (_passwordController.text != _confirmPasswordController.text) {
@@ -56,8 +56,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _alamatController.text.trim(),
       );
 
-      // Jika berhasil, navigasi akan ditangani otomatis oleh MainScreenWrapper,
-      // tetapi kita bisa beri feedback sukses dan kembali ke halaman login.
       messenger.showSnackBar(
         const SnackBar(
           content: Text('Registrasi berhasil! Silakan login.'),
@@ -66,7 +64,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       navigator.pop();
     } catch (e) {
-      // Jika gagal, tangkap error dan tampilkan SnackBar.
       messenger.showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceFirst('Exception: ', '')),
@@ -78,6 +75,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ... UI (Tidak ada perubahan)
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daftar Akun Baru'),
