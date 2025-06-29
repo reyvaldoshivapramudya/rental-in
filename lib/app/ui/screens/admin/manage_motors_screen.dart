@@ -185,12 +185,14 @@ class MotorManagementCard extends StatelessWidget {
               ],
             ),
             const Divider(height: 24),
-            // Aksi dan Status
+            // Aksi
+            // --- PERUBAHAN DI SINI ---
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Diubah menjadi .end agar tombol tetap di kanan
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                // Status Chip
-                _StatusChip(status: motor.status),
+                // Status Chip sudah dihapus dari sini
+
                 // Tombol Aksi
                 Row(
                   children: [
@@ -221,46 +223,8 @@ class MotorManagementCard extends StatelessWidget {
   }
 }
 
-// Widget untuk menampilkan status dengan chip berwarna
-class _StatusChip extends StatelessWidget {
-  final String status;
-  const _StatusChip({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    Color chipColor;
-    String chipLabel;
-    IconData chipIcon;
-
-    switch (status) {
-      case 'Disewa':
-        chipColor = Colors.redAccent;
-        chipLabel = 'Disewa';
-        chipIcon = Icons.lock_clock;
-        break;
-      case 'Menunggu Konfirmasi':
-        chipColor = Colors.orangeAccent;
-        chipLabel = 'Menunggu';
-        chipIcon = Icons.hourglass_top;
-        break;
-      default: // Tersedia
-        chipColor = Colors.green;
-        chipLabel = 'Tersedia';
-        chipIcon = Icons.check_circle;
-    }
-
-    return Chip(
-      avatar: Icon(chipIcon, color: Colors.white, size: 16),
-      label: Text(chipLabel),
-      labelStyle: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-      ),
-      backgroundColor: chipColor,
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-    );
-  }
-}
+// --- PERUBAHAN DI SINI ---
+// Widget _StatusChip sudah dihapus karena tidak lagi digunakan.
 
 // Widget untuk tampilan saat daftar motor kosong
 class _EmptyState extends StatelessWidget {
