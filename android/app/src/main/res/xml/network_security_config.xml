@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  File ini berlokasi di: android/app/src/main/res/xml/network_security_config.xml
+-->
+<network-security-config>
+    <!-- 
+      Konfigurasi ini mengizinkan lalu lintas data (termasuk HTTP biasa) 
+      ke domain spesifik yang kita butuhkan untuk ImgBB.
+    -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Domain untuk API upload gambar -->
+        <domain includeSubdomains="true">api.imgbb.com</domain>
+        
+        <!-- DOMAIN BARU: Domain untuk menampilkan/memuat gambar yang sudah di-upload -->
+        <domain includeSubdomains="true">i.ibb.co</domain>
+    </domain-config>
+</network-security-config>

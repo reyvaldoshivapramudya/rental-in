@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "271214714473",
+    "project_id": "rentalin-app",
+    "storage_bucket": "rentalin-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:271214714473:android:d8b5d4141b87f481710cf8",
+        "android_client_info": {
+          "package_name": "com.example.rentalin_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxA8_0CtW3ky_B93QbLkPrTcUrnwaKssU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
