@@ -33,7 +33,6 @@ class AuthProvider with ChangeNotifier {
       return;
     }
     
-    // Set loading true saat mengambil data user dari firestore
     _isLoading = true;
     notifyListeners();
 
@@ -49,57 +48,40 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       _user = null;
-      _errorMessage = "Gagal mengambil data user: $e";
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // --- FUNGSI LOGIN YANG DIPERBAIKI ---
-  Future<bool> login(String email, String password) async {
+  /// Melakukan proses login. Akan `throw Exception` jika gagal.
+  Future<void> login(String email, String password) async {
     _isLoading = true;
-    _errorMessage = null;
     notifyListeners();
 
-    // Karena auth_service menangani error-nya sendiri dan mengembalikan null
-    // jika gagal, kita cukup periksa hasilnya.
     final loggedInUser = await _authService.signInWithEmailAndPassword(email, password);
 
-    // Jika login berhasil (hasilnya tidak null)
-    if (loggedInUser != null) {
-      // Kita tidak perlu melakukan apa-apa di sini.
-      // Listener _onAuthStateChanged akan secara otomatis mendeteksi
-      // perubahan state, mengambil data user, dan mengatur _isLoading = false.
-      // Ini menjaga agar sumber kebenaran (source of truth) tetap satu.
-      return true;
-    } else {
-      // Jika login GAGAL (hasilnya null)
-      _errorMessage = "Login gagal. Periksa kembali email dan password Anda.";
-      _isLoading = false; // INI BAGIAN PENTING YANG MEMPERBAIKI BUG
+    if (loggedInUser == null) {
+      _isLoading = false;
       notifyListeners();
-      return false;
+      throw Exception("Login gagal. Periksa kembali email dan password Anda.");
     }
+    // Jika sukses, listener _onAuthStateChanged akan mengatur state loading dan user.
   }
 
-  // Fungsi Registrasi (disesuaikan juga untuk konsistensi)
-  Future<bool> register(String nama, String email, String password, String nomorTelepon, String alamat) async {
+  /// Melakukan proses registrasi. Akan `throw Exception` jika gagal.
+  Future<void> register(String nama, String email, String password, String nomorTelepon, String alamat) async {
     _isLoading = true;
-    _errorMessage = null;
     notifyListeners();
 
     final registeredUser = await _authService.registerWithEmailAndPassword(nama, email, password, nomorTelepon, alamat);
 
-    if (registeredUser != null) {
-      // Sukses, biarkan listener yang bekerja
-      return true;
-    } else {
-      // Gagal
-      _errorMessage = "Registrasi gagal. Email mungkin sudah terdaftar.";
+    if (registeredUser == null) {
       _isLoading = false;
       notifyListeners();
-      return false;
+      throw Exception("Registrasi gagal. Email mungkin sudah terdaftar.");
     }
+    // Jika sukses, listener _onAuthStateChanged akan mengatur state loading dan user.
   }
 
   Future<void> logout() async {

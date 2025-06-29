@@ -30,6 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  // --- FUNGSI REGISTER YANG TELAH DIPERBAIKI ---
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
     if (_passwordController.text != _confirmPasswordController.text) {
@@ -43,30 +44,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    bool success = await authProvider.register(
-      _namaController.text.trim(),
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-      _teleponController.text.trim(),
-      _alamatController.text.trim(),
-    );
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
 
-    if (!mounted) return;
+    try {
+      await authProvider.register(
+        _namaController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+        _teleponController.text.trim(),
+        _alamatController.text.trim(),
+      );
 
-    // --- PERUBAHAN LOGIKA DI SINI ---
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      // Jika berhasil, navigasi akan ditangani otomatis oleh MainScreenWrapper,
+      // tetapi kita bisa beri feedback sukses dan kembali ke halaman login.
+      messenger.showSnackBar(
         const SnackBar(
-          content: Text('Registrasi berhasil!'),
+          content: Text('Registrasi berhasil! Silakan login.'),
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.of(context).pop();
-    } else {
-      // Jika GAGAL, tampilkan pesan error
-      ScaffoldMessenger.of(context).showSnackBar(
+      navigator.pop();
+    } catch (e) {
+      // Jika gagal, tangkap error dan tampilkan SnackBar.
+      messenger.showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Registrasi gagal.'),
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
           backgroundColor: Colors.red,
         ),
       );
@@ -75,7 +78,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Kode UI tidak ada yang berubah, tetap sama seperti sebelumnya
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daftar Akun Baru'),

@@ -1,3 +1,5 @@
+// LoginScreen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
@@ -16,22 +18,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
 
-  // --- PERUBAHAN 1: Tambahkan state untuk loading awal ---
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    // --- PERUBAHAN 2: Simulasi loading sebelum UI ditampilkan ---
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    });
-  }
-
   @override
   void dispose() {
     _emailController.dispose();
@@ -39,23 +25,29 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // --- FUNGSI LOGIN YANG TELAH DIPERBAIKI DENGAN BENAR ---
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    bool success = await authProvider.login(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
+    final messenger = ScaffoldMessenger.of(context);
 
-    if (!mounted) return;
+    try {
+      // Panggil login tanpa menampung hasilnya.
+      // Jika berhasil, kode ini akan selesai tanpa error.
+      await authProvider.login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+      // Navigasi akan ditangani oleh MainScreenWrapper secara otomatis.
 
-    if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    } catch (e) {
+      // Jika authProvider.login() melempar error, akan ditangkap di sini.
+      messenger.showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Terjadi kesalahan.'),
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
           backgroundColor: Colors.red,
         ),
       );
@@ -64,12 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- PERUBAHAN 3: Tampilkan loading atau UI Login berdasarkan state ---
-    if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    // Kode UI Login yang sudah ada
     return Scaffold(
       body: SafeArea(
         child: Consumer<AuthProvider>(
@@ -83,20 +69,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Header
-                      const Icon(
-                        Icons.two_wheeler,
-                        size: 80,
-                        color: Colors.blueAccent,
-                      ),
+                      const Icon(Icons.two_wheeler, size: 80, color: Colors.blueAccent),
                       const SizedBox(height: 16),
                       const Text(
                         'Selamat Datang di Rentalin',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       const Text(
@@ -105,8 +83,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(fontSize: 16, color: Colors.grey),
                       ),
                       const SizedBox(height: 40),
-
-                      // Email Form Field
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
@@ -125,8 +101,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-
-                      // Password Form Field
                       TextFormField(
                         controller: _passwordController,
                         obscureText: !_isPasswordVisible,
@@ -154,8 +128,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                       ),
                       const SizedBox(height: 24),
-
-                      // Login Button
                       ElevatedButton(
                         onPressed: auth.isLoading ? null : _login,
                         style: ElevatedButton.styleFrom(
@@ -178,21 +150,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                       ),
                       const SizedBox(height: 24),
-
-                      // Register Navigation
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text('Belum punya akun?'),
                           TextButton(
                             onPressed: () {
-                              _emailController.clear();
-                              _passwordController.clear();
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const RegisterScreen(),
-                                ),
-                              );
+                              Navigator.of(context).push(MaterialPageRoute(
+                                builder: (context) => const RegisterScreen(),
+                              ));
                             },
                             child: const Text(
                               'Daftar di sini',
