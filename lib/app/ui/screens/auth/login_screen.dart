@@ -61,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       const Icon(Icons.two_wheeler, size: 80, color: Colors.blueAccent),
                       const SizedBox(height: 16),
-                      const Text('Selamat Datang di Rentalin', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                      const Text('Selamat Datang di Rental-in', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       const Text('Silakan masuk untuk melanjutkan', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Colors.grey)),
                       const SizedBox(height: 40),
