@@ -58,7 +58,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('Registrasi berhasil! Silakan login.'),
+          content: Text('Registrasi berhasil!'),
           backgroundColor: Colors.green,
         ),
       );
