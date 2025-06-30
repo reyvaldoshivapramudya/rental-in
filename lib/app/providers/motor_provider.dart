@@ -9,14 +9,11 @@ class MotorProvider with ChangeNotifier {
   List<MotorModel> _motors = [];
   StreamSubscription? _motorsSubscription;
   bool _isLoading = false;
-
-  // --- PERUBAHAN 1: Tambahkan state untuk pesan error ---
   String? _errorMessage;
 
   List<MotorModel> get motors => _motors;
   bool get isLoading => _isLoading;
 
-  // --- PERUBAHAN 2: Tambahkan getter untuk pesan error ---
   String? get errorMessage => _errorMessage;
 
   MotorProvider() {
@@ -25,7 +22,6 @@ class MotorProvider with ChangeNotifier {
 
   void fetchMotors() {
     _isLoading = true;
-    // --- PERUBAHAN 3: Reset pesan error setiap kali fetching dimulai ---
     _errorMessage = null;
     notifyListeners();
 
@@ -73,22 +69,31 @@ class MotorProvider with ChangeNotifier {
   }
 
   Future<void> updateMotor(MotorModel motor, File? newImageFile) async {
-    String imageUrl = motor.gambarUrl;
-    if (newImageFile != null) {
-      imageUrl = await _firestoreService.uploadMotorImage(newImageFile);
-    }
+    try {
+      // Tambahkan try-catch untuk penanganan error yang lebih baik
+      String imageUrl = motor.gambarUrl;
+      if (newImageFile != null) {
+        imageUrl = await _firestoreService.uploadMotorImage(newImageFile);
+      }
 
-    MotorModel updatedMotor = MotorModel(
-      id: motor.id,
-      nama: motor.nama,
-      merek: motor.merek,
-      tahun: motor.tahun,
-      nomorPolisi: motor.nomorPolisi,
-      hargaSewa: motor.hargaSewa,
-      status: motor.status,
-      gambarUrl: imageUrl,
-    );
-    await _firestoreService.updateMotor(motor.id, updatedMotor.toFirestore());
+      MotorModel updatedMotor = MotorModel(
+        id: motor.id,
+        nama: motor.nama,
+        merek: motor.merek,
+        tahun: motor.tahun,
+        nomorPolisi: motor.nomorPolisi,
+        hargaSewa: motor.hargaSewa,
+        status: motor.status,
+        gambarUrl: imageUrl,
+      );
+      await _firestoreService.updateMotor(motor.id, updatedMotor.toFirestore());
+
+      // Panggil fetchMotors() untuk memperbarui list lokal setelah update berhasil.
+      fetchMotors();
+    } catch (e) {
+      // Jika terjadi error, lemparkan kembali agar bisa ditangkap di UI.
+      rethrow;
+    }
   }
 
   Future<void> deleteMotor(String motorId) async {

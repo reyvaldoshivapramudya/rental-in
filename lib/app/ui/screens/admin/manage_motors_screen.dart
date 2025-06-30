@@ -22,7 +22,6 @@ class ManageMotorsScreen extends StatelessWidget {
             onPressed: () => Navigator.of(ctx).pop(),
           ),
           FilledButton(
-            child: const Text('Hapus'),
             onPressed: () {
               Provider.of<MotorProvider>(
                 context,
@@ -37,6 +36,7 @@ class ManageMotorsScreen extends StatelessWidget {
               );
             },
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Hapus'),
           ),
         ],
       ),
@@ -89,8 +89,8 @@ class ManageMotorsScreen extends StatelessWidget {
         },
         backgroundColor: Colors.blueAccent,
         foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
         tooltip: 'Tambah Motor Baru',
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -185,15 +185,10 @@ class MotorManagementCard extends StatelessWidget {
               ],
             ),
             const Divider(height: 24),
-            // Aksi
-            // --- PERUBAHAN DI SINI ---
+            
             Row(
-              // Diubah menjadi .end agar tombol tetap di kanan
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                // Status Chip sudah dihapus dari sini
-
-                // Tombol Aksi
                 Row(
                   children: [
                     IconButton(
@@ -222,9 +217,6 @@ class MotorManagementCard extends StatelessWidget {
     );
   }
 }
-
-// --- PERUBAHAN DI SINI ---
-// Widget _StatusChip sudah dihapus karena tidak lagi digunakan.
 
 // Widget untuk tampilan saat daftar motor kosong
 class _EmptyState extends StatelessWidget {
