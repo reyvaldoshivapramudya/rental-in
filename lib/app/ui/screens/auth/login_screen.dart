@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rentalin/utils/auth_exception.dart';
 import '../../../providers/auth_provider.dart';
 import 'register_screen.dart';
 
@@ -34,11 +35,11 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text.trim(),
       );
     } catch (e) {
+      final message = e is AuthException
+          ? e.message
+          : 'Terjadi kesalahan. Coba lagi.';
       messenger.showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
     }
   }
@@ -59,19 +60,41 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.two_wheeler, size: 80, color: Colors.blueAccent),
+                      const Icon(
+                        Icons.two_wheeler,
+                        size: 80,
+                        color: Colors.blueAccent,
+                      ),
                       const SizedBox(height: 16),
-                      const Text('Selamat Datang di Rental-in', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Selamat Datang di Rental-in',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      const Text('Silakan masuk untuk melanjutkan', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Colors.grey)),
+                      const Text(
+                        'Silakan masuk untuk melanjutkan',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
                       const SizedBox(height: 40),
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.email_outlined),
+                        ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) return 'Email tidak boleh kosong';
-                          if (!value.contains('@')) return 'Masukkan email yang valid';
+                          if (value == null || value.isEmpty) {
+                            return 'Password tidak boleh kosong';
+                          }
+                          if (value.length < 6) {
+                            return 'Password minimal 6 karakter';
+                          }
                           return null;
                         },
                       ),
@@ -79,16 +102,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: !_isPasswordVisible,
+                        keyboardType: TextInputType.visiblePassword,
+                        onFieldSubmitted: (_) => _login(),
                         decoration: InputDecoration(
                           labelText: 'Password',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
-                            icon: Icon(_isPasswordVisible ? Icons.visibility_off : Icons.visibility),
-                            onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                            icon: Icon(
+                              _isPasswordVisible
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () => setState(
+                              () => _isPasswordVisible = !_isPasswordVisible,
+                            ),
                           ),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) return 'Password tidak boleh kosong';
+                          if (value == null || value.isEmpty)
+                            return 'Password tidak boleh kosong';
                           return null;
                         },
                       ),
@@ -101,8 +133,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         child: auth.isLoading
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                            : const Text('Masuk', style: TextStyle(fontSize: 16)),
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 3,
+                                ),
+                              )
+                            : const Text(
+                                'Masuk',
+                                style: TextStyle(fontSize: 16),
+                              ),
                       ),
                       const SizedBox(height: 24),
                       Row(
@@ -110,8 +152,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           const Text('Belum punya akun?'),
                           TextButton(
-                            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const RegisterScreen())),
-                            child: const Text('Daftar di sini', style: TextStyle(fontWeight: FontWeight.bold)),
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const RegisterScreen(),
+                              ),
+                            ),
+                            child: const Text(
+                              'Daftar di sini',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ],
                       ),

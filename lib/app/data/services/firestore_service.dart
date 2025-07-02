@@ -1,17 +1,18 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
-import 'package:rentalin/app/data/models/sewa_model.dart'; 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:rentalin/app/data/models/motor_status.dart';
+import 'package:rentalin/app/data/models/sewa_model.dart';
+import 'package:rentalin/app/data/models/status_pemesanan.dart';
 import '../models/motor_model.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Inisialisasi Cloudinary di sini. Lebih efisien.
-  // GANTI 'NAMA_CLOUD_ANDA' dan 'NAMA_UPLOAD_PRESET_ANDA' dengan kredensial Anda.
   final CloudinaryPublic cloudinary = CloudinaryPublic(
-    'dbbh6ei1o', // <-- Ganti dengan Cloud Name Anda
-    'rentalin', // <-- Ganti dengan nama Upload Preset (unsigned)
+    dotenv.env['CLOUDINARY_CLOUD_NAME']!,
+    dotenv.env['CLOUDINARY_UPLOAD_PRESET']!,
     cache: false,
   );
 
@@ -26,12 +27,8 @@ class FirestoreService {
         );
   }
 
-  /// --- FUNGSI UPLOAD GAMBAR DENGAN SOLUSI FINAL ---
-  /// Menggunakan package `cloudinary_public` yang lebih sesuai untuk Flutter.
   Future<String> uploadMotorImage(File imageFile) async {
     try {
-      print('[CLOUDINARY_PUBLIC_DEBUG] Memulai upload gambar...');
-
       // Membuat request ke Cloudinary menggunakan package
       CloudinaryResponse response = await cloudinary.uploadFile(
         CloudinaryFile.fromFile(
@@ -41,16 +38,10 @@ class FirestoreService {
       );
 
       // URL yang aman (https) sudah disediakan oleh package
-      print(
-        '[CLOUDINARY_PUBLIC_DEBUG] SUKSES! URL Gambar: ${response.secureUrl}',
-      );
       return response.secureUrl;
     } on CloudinaryException catch (e) {
-      print('[CLOUDINARY_PUBLIC_DEBUG] GAGAL! Error: ${e.message}');
-      print(e.request);
       throw Exception('Gagal mengupload gambar: ${e.message}');
     } catch (e) {
-      print('[CLOUDINARY_PUBLIC_DEBUG] Terjadi error tidak terduga: $e');
       rethrow;
     }
   }
@@ -63,9 +54,15 @@ class FirestoreService {
           .collection('sewa')
           .where('motorId', isEqualTo: motorId)
           // Ambil pesanan yang statusnya membuat motor tidak tersedia
-          .where('statusPemesanan', whereIn: ['Menunggu Konfirmasi', 'Dikonfirmasi'])
+          .where(
+            'statusPemesanan',
+            whereIn: [
+              StatusPemesanan.menungguKonfirmasi,
+              StatusPemesanan.dikonfirmasi,
+            ],
+          )
           .get();
-      
+
       return snapshot.docs.map((doc) => SewaModel.fromFirestore(doc)).toList();
     } catch (e) {
       print('Error getting bookings for motor: $e');
@@ -85,13 +82,24 @@ class FirestoreService {
         );
   }
 
-  Future<void> addMotor(MotorModel motor) {
-    return _db.collection('motors').add(motor.toFirestore());
+  Future<String> addMotor(MotorModel motor) async {
+    try {
+      DocumentReference docRef = await _db
+          .collection('motors')
+          .add(motor.toFirestore());
+      return docRef.id;
+    } catch (e) {
+      print('Error adding motor: $e');
+      rethrow;
+    }
   }
 
   // Menambah data sewa baru
-  Future<void> addSewa(SewaModel sewa) {
-    return _db.collection('sewa').add(sewa.toFirestore());
+  Future<String> addSewa(SewaModel sewa) async {
+    DocumentReference docRef = await _db
+        .collection('sewa')
+        .add(sewa.toFirestore());
+    return docRef.id;
   }
 
   Future<void> updateMotor(String motorId, Map<String, dynamic> data) {
@@ -103,12 +111,17 @@ class FirestoreService {
     return _db.collection('motors').doc(motorId).delete();
   }
 
-  // Mengubah status motor (misal: dari "Tersedia" menjadi "Disewa")
-  Future<void> updateMotorStatus(String motorId, String newStatus) {
-    return _db.collection('motors').doc(motorId).update({'status': newStatus});
+  Future<void> updateMotorStatus(String motorId, MotorStatus newStatus) async {
+    try {
+      await _db.collection('motors').doc(motorId).update({
+        'status': newStatus.value,
+      });
+    } catch (e) {
+      print('Error updating motor status: $e');
+      rethrow;
+    }
   }
 
-  // --- FUNGSI BARU ---
   // Mengubah status pemesanan
   Future<void> updateSewaStatus(String sewaId, String newStatus) {
     return _db.collection('sewa').doc(sewaId).update({

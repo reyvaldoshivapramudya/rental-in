@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:rentalin/app/data/models/motor_status.dart';
+import 'package:rentalin/app/data/models/status_pemesanan.dart';
 import '../data/models/motor_model.dart';
 import '../data/models/sewa_model.dart';
 import '../data/models/user_model.dart';
 import '../data/services/firestore_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SewaProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
@@ -46,6 +47,7 @@ class SewaProvider with ChangeNotifier {
         notifyListeners();
       },
       onError: (e) {
+        _errorMessage = e.toString();
         _isLoading = false;
         notifyListeners();
       },
@@ -66,6 +68,7 @@ class SewaProvider with ChangeNotifier {
             notifyListeners();
           },
           onError: (e) {
+            _errorMessage = e.toString();
             _isLoading = false;
             notifyListeners();
           },
@@ -78,7 +81,7 @@ class SewaProvider with ChangeNotifier {
     notifyListeners();
 
     _bookedSchedules = await _firestoreService.getBookingsForMotor(motorId);
-    
+
     _isCheckingSchedule = false;
     notifyListeners();
   }
@@ -121,29 +124,24 @@ class SewaProvider with ChangeNotifier {
         id: '',
         userId: user.uid,
         motorId: motor.id,
-        tanggalSewa: Timestamp.fromDate(tanggalSewa),
-        tanggalKembali: Timestamp.fromDate(tanggalKembali),
+        tanggalSewa: tanggalSewa,
+        tanggalKembali: tanggalKembali,
         totalBiaya: totalBiaya,
-        statusPemesanan: 'Menunggu Konfirmasi',
-        detailMotor: {'nama': motor.nama, 'gambarUrl': motor.gambarUrl},
-        detailUser: {'nama': user.nama, 'nomorTelepon': user.nomorTelepon},
+        statusPemesanan: StatusPemesanan.menungguKonfirmasi,
+        detailMotor: motor,
+        detailUser: user,
       );
 
       await _firestoreService.addSewa(sewaBaru);
+      await _firestoreService.updateMotorStatus(motor.id, MotorStatus.disewa);
 
-      await _firestoreService.updateMotorStatus(
-        motor.id,
-        'Menunggu Konfirmasi',
-      );
-
-      _isLoading = false;
-      notifyListeners();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
+      return false;
+    } finally {
       _isLoading = false;
       notifyListeners();
-      return false;
     }
   }
 
@@ -152,27 +150,43 @@ class SewaProvider with ChangeNotifier {
     String motorId,
     bool isKonfirmasi,
   ) async {
+    _isLoading = true;
+    notifyListeners();
+
     try {
       if (isKonfirmasi) {
         await _firestoreService.updateSewaStatus(sewaId, 'Dikonfirmasi');
-        await _firestoreService.updateMotorStatus(motorId, 'Disewa');
+        await _firestoreService.updateMotorStatus(motorId, MotorStatus.disewa);
       } else {
         await _firestoreService.updateSewaStatus(sewaId, 'Ditolak');
-        await _firestoreService.updateMotorStatus(motorId, 'Tersedia');
+        await _firestoreService.updateMotorStatus(
+          motorId,
+          MotorStatus.tersedia,
+        );
       }
       return true;
     } catch (e) {
       _errorMessage = e.toString();
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
   Future<void> selesaikanSewa(String sewaId, String motorId) async {
+    _isLoading = true;
+    notifyListeners();
+
     try {
       await _firestoreService.updateSewaStatus(sewaId, 'Selesai');
-      await _firestoreService.updateMotorStatus(motorId, 'Tersedia');
+      await _firestoreService.updateMotorStatus(motorId, MotorStatus.tersedia);
     } catch (e) {
+      _errorMessage = e.toString();
       print('Error menyelesaikan sewa: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 

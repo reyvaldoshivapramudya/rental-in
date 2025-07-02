@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rentalin/utils/auth_exception.dart';
 import '../../../providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -9,7 +10,6 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // ... (semua controller)
   final _formKey = GlobalKey<FormState>();
   final _namaController = TextEditingController();
   final _emailController = TextEditingController();
@@ -17,11 +17,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _teleponController = TextEditingController();
   final _alamatController = TextEditingController();
+
   bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible =
+      false; // 🔶 d. Granular toggle confirm password
 
   @override
   void dispose() {
-    // ... (dispose semua controller)
     _namaController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -33,15 +35,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password dan konfirmasi password tidak cocok.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final messenger = ScaffoldMessenger.of(context);
@@ -64,18 +57,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       navigator.pop();
     } catch (e) {
+      // 🔶 c. Error Message Clarity with AuthException
+      final message = e is AuthException
+          ? e.message
+          : 'Terjadi kesalahan. Coba lagi.';
       messenger.showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // ... UI (Tidak ada perubahan)
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daftar Akun Baru'),
@@ -108,6 +101,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 32),
                     TextFormField(
                       controller: _namaController,
+                      textInputAction:
+                          TextInputAction.next, // 🔶 f. Focus Management
+                      onFieldSubmitted: (_) =>
+                          FocusScope.of(context).nextFocus(),
                       decoration: const InputDecoration(
                         labelText: 'Nama Lengkap',
                       ),
@@ -118,6 +115,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     TextFormField(
                       controller: _teleponController,
                       keyboardType: TextInputType.phone,
+                      textInputAction: TextInputAction.next, // 🔶 f
+                      onFieldSubmitted: (_) =>
+                          FocusScope.of(context).nextFocus(),
                       decoration: const InputDecoration(
                         labelText: 'Nomor Telepon (WA)',
                       ),
@@ -129,6 +129,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     TextFormField(
                       controller: _alamatController,
                       keyboardType: TextInputType.streetAddress,
+                      textInputAction: TextInputAction.next, // 🔶 f
+                      onFieldSubmitted: (_) =>
+                          FocusScope.of(context).nextFocus(),
                       decoration: const InputDecoration(
                         labelText: 'Alamat Lengkap',
                         hintText: 'Contoh: Jl. Pahlawan No. 123...',
@@ -141,6 +144,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next, // 🔶 f
+                      onFieldSubmitted: (_) =>
+                          FocusScope.of(context).nextFocus(),
                       decoration: const InputDecoration(labelText: 'Email'),
                       validator: (v) {
                         if (v!.isEmpty) return 'Email tidak boleh kosong';
@@ -152,6 +158,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: !_isPasswordVisible,
+                      keyboardType:
+                          TextInputType.visiblePassword, // 🔶 e. Accessibility
+                      textInputAction: TextInputAction.next, // 🔶 f
+                      onFieldSubmitted: (_) =>
+                          FocusScope.of(context).nextFocus(),
                       decoration: InputDecoration(
                         labelText: 'Password',
                         suffixIcon: IconButton(
@@ -174,13 +185,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _confirmPasswordController,
-                      obscureText: !_isPasswordVisible,
-                      decoration: const InputDecoration(
+                      obscureText:
+                          !_isConfirmPasswordVisible, // 🔶 d. Separate visibility
+                      keyboardType: TextInputType.visiblePassword, // 🔶 e
+                      textInputAction: TextInputAction.done, // 🔶 f
+                      decoration: InputDecoration(
                         labelText: 'Konfirmasi Password',
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isConfirmPasswordVisible
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () => setState(
+                            () => _isConfirmPasswordVisible =
+                                !_isConfirmPasswordVisible,
+                          ),
+                        ),
                       ),
-                      validator: (v) => v!.isEmpty
-                          ? 'Konfirmasi password tidak boleh kosong'
-                          : null,
+                      // 🔶 b. Validator Password Confirmation Implementation
+                      validator: (v) {
+                        if (v == null || v.isEmpty)
+                          return 'Konfirmasi password tidak boleh kosong';
+                        if (v != _passwordController.text)
+                          return 'Password tidak cocok';
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(

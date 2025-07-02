@@ -15,6 +15,7 @@ class BookingFormScreen extends StatefulWidget {
 }
 
 class _BookingFormScreenState extends State<BookingFormScreen> {
+  late final SewaProvider _sewaProvider;
   DateTime? _tanggalSewa;
   DateTime? _tanggalKembali;
   int _durasi = 0;
@@ -25,39 +26,41 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     super.initState();
     initializeDateFormatting('id_ID', null);
 
+    _sewaProvider = Provider.of<SewaProvider>(context, listen: false);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<SewaProvider>(
-        context,
-        listen: false,
-      ).fetchBookedDates(widget.motor.id);
+      _sewaProvider.fetchBookedDates(widget.motor.id);
     });
   }
 
-  // --- PERBAIKAN UTAMA DI SINI ---
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sewaProvider = Provider.of<SewaProvider>(context, listen: false);
+  }
+
   @override
   void dispose() {
-    // Panggil provider secara langsung di dalam dispose.
-    // Tidak perlu menggunakan addPostFrameCallback karena akan menyebabkan error
-    // saat context sudah tidak valid.
-    // Dapatkan referensi provider sebelum widget benar-benar di-dispose.
-    final sewaProvider = Provider.of<SewaProvider>(context, listen: false);
-    sewaProvider.clearBookedDates();
-
+    _sewaProvider.clearBookedDates();
     super.dispose();
   }
 
   bool _isDateSelectable(DateTime day) {
     final sewaProvider = Provider.of<SewaProvider>(context, listen: false);
     for (final schedule in sewaProvider.bookedSchedules) {
-      final startDate = schedule.tanggalSewa.toDate();
-      final endDate = schedule.tanggalKembali.toDate();
+      final startDate = DateTime(
+        schedule.tanggalSewa.year,
+        schedule.tanggalSewa.month,
+        schedule.tanggalSewa.day,
+      );
+      final endDate = DateTime(
+        schedule.tanggalKembali.year,
+        schedule.tanggalKembali.month,
+        schedule.tanggalKembali.day,
+      );
       final dayToCheck = DateTime(day.year, day.month, day.day);
-      final start = DateTime(startDate.year, startDate.month, startDate.day);
-      final end = DateTime(endDate.year, endDate.month, endDate.day);
 
-      if ((dayToCheck.isAfter(start) && dayToCheck.isBefore(end)) ||
-          dayToCheck.isAtSameMomentAs(start) ||
-          dayToCheck.isAtSameMomentAs(end)) {
+      if (!dayToCheck.isBefore(startDate) && !dayToCheck.isAfter(endDate)) {
         return false;
       }
     }
@@ -66,8 +69,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
 
   void _calculateBill() {
     if (_tanggalSewa != null && _tanggalKembali != null) {
-      if (_tanggalKembali!.isAfter(_tanggalSewa!) ||
-          _tanggalKembali!.isAtSameMomentAs(_tanggalSewa!)) {
+      if (!_tanggalKembali!.isBefore(_tanggalSewa!)) {
         setState(() {
           _durasi = _tanggalKembali!.difference(_tanggalSewa!).inDays + 1;
           _totalBiaya = _durasi * widget.motor.hargaSewa;
@@ -87,7 +89,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
   }
 
   Future<void> _pilihTanggal(BuildContext context, bool isTanggalSewa) async {
-    final DateTime? picked = await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
@@ -106,7 +108,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     }
   }
 
-  void _konfirmasiBooking() {
+  void _konfirmasiBooking() async {
     if (_tanggalSewa == null || _tanggalKembali == null || _durasi <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -119,7 +121,9 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (user == null) return;
 
-    showDialog(
+    final sewaProvider = Provider.of<SewaProvider>(context, listen: false);
+
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Konfirmasi Pesanan'),
@@ -138,56 +142,47 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
+            onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Batal'),
           ),
           FilledButton(
-            onPressed: () async {
-              // Simpan referensi ke context, provider, dan navigator SEBELUM await
-              final sewaProvider = Provider.of<SewaProvider>(
-                context,
-                listen: false,
-              );
-              final messenger = ScaffoldMessenger.of(context);
-              final navigator = Navigator.of(context);
-
-              // Tutup dialog terlebih dahulu
-              Navigator.of(ctx).pop();
-
-              final success = await sewaProvider.createSewa(
-                user: user,
-                motor: widget.motor,
-                tanggalSewa: _tanggalSewa!,
-                tanggalKembali: _tanggalKembali!,
-              );
-
-              // Gunakan `mounted` untuk memastikan widget masih ada
-              if (!mounted) return;
-
-              if (success) {
-                messenger.showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Booking berhasil! Silahkan datang ke rental kami dengan membawa kartu identitas diri.',
-                    ),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-                navigator.pop(true); // Gunakan navigator yang sudah disimpan
-              } else {
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text(sewaProvider.errorMessage ?? 'Booking Gagal'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
+            onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Konfirmasi'),
           ),
         ],
       ),
     );
+
+    if (confirmed != true) return;
+
+    final success = await sewaProvider.createSewa(
+      user: user,
+      motor: widget.motor,
+      tanggalSewa: _tanggalSewa!,
+      tanggalKembali: _tanggalKembali!,
+    );
+
+    if (!mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    if (success) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Booking berhasil! Silahkan datang ke rental kami dengan membawa kartu identitas diri.',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.of(context).pop(true);
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(sewaProvider.errorMessage ?? 'Booking Gagal'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -274,7 +269,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Consumer<SewaProvider>(
           builder: (context, sewa, child) {
-            final bool isButtonEnabled =
+            final isButtonEnabled =
                 _tanggalSewa != null &&
                 _tanggalKembali != null &&
                 _durasi > 0 &&

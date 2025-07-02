@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:rentalin/app/data/models/user_role.dart';
+import 'package:rentalin/utils/auth_exception.dart';
 import '../models/user_model.dart'; // Pastikan path import ini benar
 
 class AuthService {
@@ -15,18 +17,16 @@ class AuthService {
     String alamat,
   ) async {
     try {
-      // 1. Buat user di Firebase Authentication
       UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(email: email, password: password);
       User? user = userCredential.user;
 
       if (user != null) {
-        // 2. Buat dokumen user di Firestore
         UserModel newUser = UserModel(
           uid: user.uid,
           nama: nama,
           email: email,
-          role: 'user', // Default role untuk pendaftaran baru
+          role: UserRole.user,
           nomorTelepon: nomorTelepon,
           alamat: alamat,
         );
@@ -35,19 +35,18 @@ class AuthService {
             .collection('users')
             .doc(user.uid)
             .set(newUser.toFirestore());
-
         return newUser;
       }
-    } on FirebaseAuthException catch (e) {
-      // Menangani error spesifik dari Firebase Auth
-      print('Error registrasi: ${e.message}');
-      // Anda bisa menampilkan pesan error ini ke user nantinya
       return null;
+    } on FirebaseAuthException catch (e) {
+      print('Error registrasi: ${e.message}');
+      throw AuthException(
+        message: e.message ?? 'Terjadi kesalahan autentikasi',
+      );
     } catch (e) {
       print('Terjadi error: $e');
-      return null;
+      rethrow;
     }
-    return null;
   }
 
   // Fungsi untuk Sign In / Login

@@ -22,12 +22,17 @@ class ManageMotorsScreen extends StatelessWidget {
             onPressed: () => Navigator.of(ctx).pop(),
           ),
           FilledButton(
-            onPressed: () {
-              Provider.of<MotorProvider>(
+            onPressed: () async {
+              Navigator.of(ctx).pop(); // Tutup dialog terlebih dulu
+
+              final motorProvider = Provider.of<MotorProvider>(
                 context,
                 listen: false,
-              ).deleteMotor(motor.id);
-              Navigator.of(ctx).pop();
+              );
+
+              await motorProvider.deleteMotor(motor.id);
+              await motorProvider.refreshMotors(); // Tambahkan refresh disini
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Motor "${motor.nama}" berhasil dihapus.'),
@@ -58,7 +63,7 @@ class ManageMotorsScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (motorProvider.motors.isEmpty) {
-            return const _EmptyState(); // Tampilan empty state yang lebih baik
+            return const _EmptyState();
           }
           return ListView.builder(
             padding: const EdgeInsets.all(12.0),
@@ -67,12 +72,20 @@ class ManageMotorsScreen extends StatelessWidget {
               final motor = motorProvider.motors[index];
               return MotorManagementCard(
                 motor: motor,
-                onEdit: () {
-                  Navigator.of(context).push(
+                onEdit: () async {
+                  final result = await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => MotorFormScreen(motor: motor),
                     ),
                   );
+
+                  if (result == true) {
+                    // Jika halaman edit mengembalikan true, refresh list
+                    Provider.of<MotorProvider>(
+                      context,
+                      listen: false,
+                    ).refreshMotors();
+                  }
                 },
                 onDelete: () => _showDeleteConfirmation(context, motor),
               );
@@ -80,12 +93,15 @@ class ManageMotorsScreen extends StatelessWidget {
           );
         },
       ),
-      // Tombol FAB untuk tambah motor
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(
+        onPressed: () async {
+          final result = await Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (_) => const MotorFormScreen()));
+
+          if (result == true) {
+            Provider.of<MotorProvider>(context, listen: false).refreshMotors();
+          }
         },
         backgroundColor: Colors.blueAccent,
         foregroundColor: Colors.white,
@@ -96,7 +112,6 @@ class ManageMotorsScreen extends StatelessWidget {
   }
 }
 
-// Widget Kartu Kustom untuk setiap motor
 class MotorManagementCard extends StatelessWidget {
   final MotorModel motor;
   final VoidCallback onEdit;
@@ -123,7 +138,6 @@ class MotorManagementCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Gambar Motor
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.network(
@@ -146,7 +160,6 @@ class MotorManagementCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Detail Motor
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,7 +198,6 @@ class MotorManagementCard extends StatelessWidget {
               ],
             ),
             const Divider(height: 24),
-            
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -218,7 +230,6 @@ class MotorManagementCard extends StatelessWidget {
   }
 }
 
-// Widget untuk tampilan saat daftar motor kosong
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 

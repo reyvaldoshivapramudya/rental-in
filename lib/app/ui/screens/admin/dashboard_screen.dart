@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rentalin/app/providers/sewa_provider.dart';
-import 'package:rentalin/app/ui/screens/admin/manage_motors_screen.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/sewa_provider.dart';
 import 'motor_form_screen.dart';
+import 'manage_motors_screen.dart';
 import 'manage_bookings_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -11,23 +11,21 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Ambil data admin untuk ditampilkan di header
-    final adminEmail =
-        Provider.of<AuthProvider>(context, listen: false).user?.email ??
-        'Admin';
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final sewaProvider = Provider.of<SewaProvider>(context, listen: false);
+    final adminEmail = authProvider.user?.email ?? 'Admin';
 
     return Scaffold(
-      backgroundColor: Colors.grey[100], // Latar belakang yang lebih soft
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text('Dashboard Admin'),
         backgroundColor: Colors.blueAccent,
         foregroundColor: Colors.white,
-        elevation: 0, // Menghilangkan bayangan default
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              // Dialog konfirmasi sebelum logout
               showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
@@ -40,16 +38,8 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     FilledButton(
                       onPressed: () {
-                        Navigator.of(ctx).pop(); // Tutup dialog
+                        Navigator.of(ctx).pop();
                         Future.microtask(() {
-                          final authProvider = Provider.of<AuthProvider>(
-                            context,
-                            listen: false,
-                          );
-                          final sewaProvider = Provider.of<SewaProvider>(
-                            context,
-                            listen: false,
-                          );
                           sewaProvider.clearUserSewaData();
                           authProvider.logout();
                         });
@@ -65,13 +55,10 @@ class DashboardScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // --- 1. Header Sambutan ---
-          _buildHeader(context, adminEmail),
-
-          // --- 2. Grid Menu ---
+          _buildHeader(adminEmail),
           Expanded(
             child: GridView.count(
-              crossAxisCount: 2, // 2 kolom
+              crossAxisCount: 2,
               padding: const EdgeInsets.all(16.0),
               crossAxisSpacing: 16.0,
               mainAxisSpacing: 16.0,
@@ -81,39 +68,31 @@ class DashboardScreen extends StatelessWidget {
                   title: 'Tambah Motor',
                   subtitle: 'Daftarkan motor baru',
                   color: Colors.green,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const MotorFormScreen(),
-                      ),
-                    );
-                  },
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MotorFormScreen()),
+                  ),
                 ),
                 DashboardCard(
                   icon: Icons.edit_note,
                   title: 'Kelola Motor',
                   subtitle: 'Edit atau hapus data',
                   color: Colors.orange,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ManageMotorsScreen(),
-                      ),
-                    );
-                  },
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ManageMotorsScreen(),
+                    ),
+                  ),
                 ),
                 DashboardCard(
                   icon: Icons.book_online_outlined,
                   title: 'Manajemen Booking',
                   subtitle: 'Konfirmasi pesanan',
                   color: Colors.blue,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const ManageBookingsScreen(),
-                      ),
-                    );
-                  },
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ManageBookingsScreen(),
+                    ),
+                  ),
                 ),
                 // DashboardCard(
                 //   icon: Icons.bar_chart_outlined,
@@ -121,11 +100,8 @@ class DashboardScreen extends StatelessWidget {
                 //   subtitle: 'Statistik rental',
                 //   color: Colors.purple,
                 //   onTap: () {
-                //     // Placeholder untuk fitur selanjutnya
                 //     ScaffoldMessenger.of(context).showSnackBar(
-                //       const SnackBar(
-                //         content: Text('Fitur Laporan segera hadir!'),
-                //       ),
+                //       const SnackBar(content: Text('Fitur Laporan segera hadir!')),
                 //     );
                 //   },
                 // ),
@@ -137,8 +113,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  // Widget untuk header
-  Widget _buildHeader(BuildContext context, String adminEmail) {
+  Widget _buildHeader(String adminEmail) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
@@ -174,7 +149,6 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-// --- 3. Widget Kustom untuk Kartu Dashboard ---
 class DashboardCard extends StatelessWidget {
   final IconData icon;
   final String title;

@@ -8,7 +8,6 @@ import '../../../data/models/motor_model.dart';
 import 'history_screen.dart';
 import 'motor_detail_screen.dart';
 
-// 1. WIDGET UTAMA SEBAGAI WADAH/SHELL (TIDAK ADA PERUBAHAN)
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -19,10 +18,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // Daftar halaman yang akan ditampilkan di dalam shell
   static const List<Widget> _widgetOptions = <Widget>[
-    MotorListTab(), // Halaman untuk daftar motor
-    HistoryScreen(), // Halaman untuk riwayat pesanan
+    MotorListTab(),
+    HistoryScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -51,7 +49,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// 2. WIDGET UNTUK TAB DAFTAR MOTOR (DENGAN MODIFIKASI)
 class MotorListTab extends StatefulWidget {
   const MotorListTab({super.key});
 
@@ -60,22 +57,18 @@ class MotorListTab extends StatefulWidget {
 }
 
 class _MotorListTabState extends State<MotorListTab> {
-  // --- PERUBAHAN 1: Menambahkan state untuk mengelola mode tampilan ---
   bool _isGridView = false;
 
   Future<void> _refreshMotors(BuildContext context) async {
-    await Provider.of<MotorProvider>(
-      context,
-      listen: false,
-    ).fetchMotorsManual();
+    await Provider.of<MotorProvider>(context, listen: false).refreshMotors();
   }
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshMotors(context);
-    });
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _refreshMotors(context),
+    );
   }
 
   @override
@@ -88,57 +81,49 @@ class _MotorListTabState extends State<MotorListTab> {
         actions: [
           IconButton(
             icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view),
-            onPressed: () {
-              setState(() {
-                _isGridView = !_isGridView;
-              });
-            },
+            onPressed: () => setState(() => _isGridView = !_isGridView),
           ),
           IconButton(
+            icon: const Icon(Icons.person),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
               );
             },
-            icon: const Icon(Icons.person),
           ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              Future.microtask(() {
-                showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Konfirmasi Logout'),
-                    content: const Text('Apakah Anda yakin ingin keluar?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        child: const Text('Batal'),
-                      ),
-                      FilledButton(
-                        onPressed: () {
-                          Navigator.of(ctx).pop(); // Tutup dialog
-                          Future.microtask(() {
-                            final authProvider = Provider.of<AuthProvider>(
-                              context,
-                              listen: false,
-                            );
-                            final sewaProvider = Provider.of<SewaProvider>(
-                              context,
-                              listen: false,
-                            );
-                            sewaProvider.clearUserSewaData();
-                            authProvider.logout();
-                          });
-                        },
-                        child: const Text('Logout'),
-                      ),
-                    ],
-                  ),
-                );
-              });
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Konfirmasi Logout'),
+                  content: const Text('Apakah Anda yakin ingin keluar?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Batal'),
+                    ),
+                    FilledButton(
+                      onPressed: () async {
+                        Navigator.of(ctx).pop();
+                        final authProvider = Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        );
+                        final sewaProvider = Provider.of<SewaProvider>(
+                          context,
+                          listen: false,
+                        );
+                        sewaProvider.clearUserSewaData();
+                        await authProvider.logout();
+                      },
+                      child: const Text('Logout'),
+                    ),
+                  ],
+                ),
+              );
             },
           ),
         ],
@@ -156,17 +141,22 @@ class _MotorListTabState extends State<MotorListTab> {
                 builder: (context, constraints) {
                   return SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    child: Container(
+                    child: SizedBox(
                       height: constraints.maxHeight,
-                      alignment: Alignment.center,
-                      child: const Text('Belum ada motor yang tersedia.'),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.motorcycle, size: 64, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text('Belum ada motor yang tersedia.'),
+                        ],
+                      ),
                     ),
                   );
                 },
               );
             }
 
-            // --- PERUBAHAN 3: Memilih widget berdasarkan state _isGridView ---
             return _isGridView
                 ? buildGridView(motorProvider.motors)
                 : buildListView(motorProvider.motors);
@@ -176,7 +166,6 @@ class _MotorListTabState extends State<MotorListTab> {
     );
   }
 
-  // Widget untuk membangun ListView
   Widget buildListView(List<MotorModel> motors) {
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -184,35 +173,33 @@ class _MotorListTabState extends State<MotorListTab> {
       itemCount: motors.length,
       itemBuilder: (context, index) {
         final motor = motors[index];
-        return MotorCard(motor: motor, isGridView: false); // Kirim flag view
+        return MotorCard(motor: motor, isGridView: false);
       },
     );
   }
 
-  // Widget untuk membangun GridView
   Widget buildGridView(List<MotorModel> motors) {
     return GridView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(8.0),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // Jumlah kolom dalam grid
-        crossAxisSpacing: 8.0, // Spasi horizontal antar item
-        mainAxisSpacing: 8.0, // Spasi vertikal antar item
-        childAspectRatio: 0.75, // Rasio aspek untuk setiap item
+        crossAxisCount: 2,
+        crossAxisSpacing: 8.0,
+        mainAxisSpacing: 8.0,
+        childAspectRatio: 0.75,
       ),
       itemCount: motors.length,
       itemBuilder: (context, index) {
         final motor = motors[index];
-        return MotorCard(motor: motor, isGridView: true); // Kirim flag view
+        return MotorCard(motor: motor, isGridView: true);
       },
     );
   }
 }
 
-// 3. WIDGET KARTU MOTOR (DENGAN MODIFIKASI KECIL)
 class MotorCard extends StatelessWidget {
   final MotorModel motor;
-  final bool isGridView; // Tambahkan flag untuk membedakan tampilan
+  final bool isGridView;
 
   const MotorCard({super.key, required this.motor, this.isGridView = false});
 
@@ -223,13 +210,12 @@ class MotorCard extends StatelessWidget {
       imageUrl = imageUrl.replaceFirst('http://', 'https://');
     }
 
-    final Widget placeholder = Container(
-      height: isGridView ? 120 : 150, // Sesuaikan tinggi untuk grid
+    final placeholder = Container(
+      height: isGridView ? 120 : 150,
       color: Colors.grey[200],
       child: const Icon(Icons.two_wheeler, size: 50, color: Colors.grey),
     );
 
-    // Mengubah tampilan 'Lihat Detail' untuk Grid agar lebih ringkas
     final lihatDetailWidget = isGridView
         ? const Icon(
             Icons.arrow_forward_ios,
@@ -242,43 +228,39 @@ class MotorCard extends StatelessWidget {
           );
 
     return Card(
-      margin: const EdgeInsets.all(
-        4,
-      ), // Margin diatur oleh parent (ListView/GridView)
+      margin: const EdgeInsets.all(4),
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      clipBehavior:
-          Clip.antiAlias, // Memastikan InkWell tidak keluar dari border
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => MotorDetailScreen(motorId: motor.id),
+              builder: (_) => MotorDetailScreen(motorId: motor.id),
             ),
           );
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Gambar Motor
             SizedBox(
-              height: isGridView ? 120 : 150, // Sesuaikan tinggi gambar
+              height: isGridView ? 120 : 150,
               width: double.infinity,
               child: imageUrl.isEmpty
                   ? placeholder
                   : Image.network(
                       imageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => placeholder,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
+                      errorBuilder: (_, __, ___) => placeholder,
+                      loadingBuilder: (_, child, progress) {
+                        if (progress == null) return child;
                         return Container(
                           color: Colors.grey[200],
                           child: Center(
                             child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
+                              value: progress.expectedTotalBytes != null
+                                  ? progress.cumulativeBytesLoaded /
+                                        progress.expectedTotalBytes!
                                   : null,
                             ),
                           ),
@@ -286,7 +268,6 @@ class MotorCard extends StatelessWidget {
                       },
                     ),
             ),
-            // Detail Teks di bawah gambar
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: Column(
@@ -315,7 +296,7 @@ class MotorCard extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          'Rp ${motor.hargaSewa}',
+                          motor.formattedPrice,
                           style: TextStyle(
                             fontSize: isGridView ? 14 : 16,
                             fontWeight: FontWeight.bold,
@@ -324,13 +305,12 @@ class MotorCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      // Teks '/ hari' hanya ditampilkan jika bukan grid view untuk menghemat ruang
                       if (!isGridView)
                         const Text(
                           '/ hari',
                           style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
-                      const Spacer(), // Memberi ruang fleksibel
+                      const Spacer(),
                       lihatDetailWidget,
                     ],
                   ),

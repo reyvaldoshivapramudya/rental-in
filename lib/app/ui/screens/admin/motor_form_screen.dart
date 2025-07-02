@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:rentalin/app/data/models/motor_status.dart';
 import '../../../data/models/motor_model.dart';
 import '../../../providers/motor_provider.dart';
 
@@ -62,12 +63,9 @@ class _MotorFormScreenState extends State<MotorFormScreen> {
     }
   }
 
-  // --- FUNGSI PENYIMPANAN MOTOR (DENGAN PERBAIKAN) ---
   Future<void> _simpanMotor() async {
-    // 1. Validasi form
     if (!_formKey.currentState!.validate()) return;
 
-    // 2. Validasi gambar (hanya untuk mode tambah baru)
     if (!isEditMode && _imageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -80,7 +78,6 @@ class _MotorFormScreenState extends State<MotorFormScreen> {
 
     setState(() => _isLoading = true);
 
-    // Simpan referensi ke context, provider, dan navigator SEBELUM await
     final motorProvider = Provider.of<MotorProvider>(context, listen: false);
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
@@ -89,7 +86,6 @@ class _MotorFormScreenState extends State<MotorFormScreen> {
       String successMessage;
 
       if (isEditMode) {
-        // Logika untuk UPDATE motor
         final updatedMotorData = MotorModel(
           id: widget.motor!.id,
           nama: _namaController.text,
@@ -97,37 +93,31 @@ class _MotorFormScreenState extends State<MotorFormScreen> {
           tahun: int.parse(_tahunController.text),
           nomorPolisi: _nopolController.text.toUpperCase(),
           hargaSewa: int.parse(_hargaController.text),
-          status: widget.motor!.status, // Status tidak diubah dari form
+          status: widget.motor!.status,
           gambarUrl: widget.motor!.gambarUrl,
         );
         await motorProvider.updateMotor(updatedMotorData, _imageFile);
         successMessage = 'Data motor berhasil diperbarui!';
       } else {
-        // Logika untuk CREATE motor baru
         final motorData = MotorModel(
-          id: '', // ID akan di-generate oleh Firestore
+          id: '',
           nama: _namaController.text,
           merek: _merekController.text,
           tahun: int.parse(_tahunController.text),
           nomorPolisi: _nopolController.text.toUpperCase(),
           hargaSewa: int.parse(_hargaController.text),
-          status: 'Tersedia', // Status default saat motor baru ditambahkan
-          gambarUrl: '', // URL akan di-generate saat upload
+          status: MotorStatus.tersedia,
+          gambarUrl: '',
         );
         await motorProvider.addMotor(motorData, _imageFile!);
         successMessage = 'Data motor berhasil ditambahkan!';
       }
 
-      // Gunakan referensi yang sudah disimpan
       messenger.showSnackBar(
         SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
       );
-      // --- PERBAIKAN UTAMA: Gunakan pop() hanya satu kali ---
-      // Ini akan menutup form dan kembali ke halaman sebelumnya (ManageMotorsScreen)
-      // dengan aman tanpa menyebabkan crash.
-      navigator.pop();
+      navigator.pop(true);
     } catch (e) {
-      // Tampilkan error jika gagal
       messenger.showSnackBar(
         SnackBar(
           content: Text('Gagal menyimpan data: $e'),
@@ -135,7 +125,6 @@ class _MotorFormScreenState extends State<MotorFormScreen> {
         ),
       );
     } finally {
-      // Pastikan loading state selalu di-reset
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -168,8 +157,6 @@ class _MotorFormScreenState extends State<MotorFormScreen> {
       ),
     );
   }
-
-  // --- WIDGET-WIDGET BUILDER (Tidak ada perubahan di bawah sini) ---
 
   Widget _buildImagePicker() {
     return Card(

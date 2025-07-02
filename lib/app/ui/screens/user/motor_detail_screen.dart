@@ -1,24 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rentalin/app/data/models/motor_status.dart';
 import '../../../data/models/motor_model.dart';
 import '../../../providers/motor_provider.dart';
 import 'booking_form_screen.dart';
 
 class MotorDetailScreen extends StatelessWidget {
-  // Sekarang kita hanya butuh ID untuk mencari data terbaru
   final String motorId;
 
   const MotorDetailScreen({super.key, required this.motorId});
 
   @override
   Widget build(BuildContext context) {
-    // Gunakan Consumer untuk mendapatkan data motor terbaru dari MotorProvider
     return Consumer<MotorProvider>(
       builder: (context, motorProvider, child) {
-        // Cari motor berdasarkan ID
-        final MotorModel? motor = motorProvider.motors.firstWhere(
+        final motor = motorProvider.motors.firstWhere(
           (m) => m.id == motorId,
-          // Jika tidak ditemukan (misal setelah dihapus admin), sediakan fallback
           orElse: () => MotorModel(
             id: '',
             nama: 'Motor tidak ditemukan',
@@ -26,36 +23,65 @@ class MotorDetailScreen extends StatelessWidget {
             tahun: 0,
             nomorPolisi: '',
             hargaSewa: 0,
-            status: 'Tidak Tersedia',
+            status: MotorStatus.tidakTersedia,
             gambarUrl: '',
           ),
         );
 
-        // Jika motor null, tampilkan loading atau pesan error
-        if (motor == null) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
         final statusColor = motor.status == 'Tersedia'
             ? Colors.green
             : Colors.orange;
-        final bool isSewaEnabled = motor.status == 'Tersedia';
+        final isSewaEnabled = motor.status == 'Tersedia';
 
         return Scaffold(
           appBar: AppBar(
             title: Text(motor.nama),
             backgroundColor: Colors.blueAccent,
-            elevation: 0,
             foregroundColor: Colors.white,
           ),
           body: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ... (UI untuk gambar dan detail sama seperti sebelumnya) ...
-                Image.network(motor.gambarUrl, height: 250, fit: BoxFit.cover),
+                motor.gambarUrl.isNotEmpty
+                    ? Image.network(
+                        motor.gambarUrl,
+                        height: 250,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 250,
+                          color: Colors.grey[200],
+                          child: const Icon(
+                            Icons.two_wheeler,
+                            size: 80,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return Container(
+                            height: 250,
+                            color: Colors.grey[200],
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value: progress.expectedTotalBytes != null
+                                    ? progress.cumulativeBytesLoaded /
+                                          progress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        height: 250,
+                        color: Colors.grey[200],
+                        child: const Icon(
+                          Icons.two_wheeler,
+                          size: 80,
+                          color: Colors.grey,
+                        ),
+                      ),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -78,11 +104,10 @@ class MotorDetailScreen extends StatelessWidget {
                         children: [
                           Chip(
                             label: Text(
-                              motor.status,
+                              motor.status.displayName,
                               style: const TextStyle(color: Colors.white),
                             ),
                             backgroundColor: statusColor,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
                           ),
                           const SizedBox(width: 10),
                           Icon(
@@ -107,13 +132,30 @@ class MotorDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Rp ${motor.hargaSewa} / hari',
+                        motor.formattedPrice + ' / hari',
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: Colors.blueAccent,
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      if (motor.deskripsi != null &&
+                          motor.deskripsi!.isNotEmpty)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Deskripsi',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(motor.deskripsi!),
+                          ],
+                        ),
                     ],
                   ),
                 ),
@@ -125,19 +167,17 @@ class MotorDetailScreen extends StatelessWidget {
             child: ElevatedButton(
               onPressed: isSewaEnabled
                   ? () async {
-                      // Tunggu hasil dari halaman booking
                       final bookingResult = await Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => BookingFormScreen(motor: motor),
+                          builder: (_) => BookingFormScreen(motor: motor),
                         ),
                       );
 
-                      // Jika hasil booking adalah 'true' (sukses), baru refresh data
                       if (bookingResult == true && context.mounted) {
                         Provider.of<MotorProvider>(
                           context,
                           listen: false,
-                        ).fetchMotorsManual();
+                        ).refreshMotors();
                       }
                     }
                   : null,

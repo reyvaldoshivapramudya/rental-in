@@ -87,11 +87,10 @@ class BookingCard extends StatelessWidget {
     }
   }
 
-  // --- WIDGET BARU UNTUK MENAMPILKAN TOMBOL AKSI SECARA DINAMIS ---
   Widget _buildActionButtons(BuildContext context) {
     final sewaProvider = Provider.of<SewaProvider>(context, listen: false);
 
-    switch (sewa.statusPemesanan) {
+    switch (sewa.statusPemesanan.value) {
       case 'Menunggu Konfirmasi':
         return Row(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -133,7 +132,6 @@ class BookingCard extends StatelessWidget {
           ],
         );
       default:
-        // Untuk status 'Ditolak' atau 'Selesai', tidak ada tombol aksi
         return const SizedBox.shrink();
     }
   }
@@ -141,6 +139,7 @@ class BookingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('d MMM yy', 'id_ID');
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 3,
@@ -149,13 +148,12 @@ class BookingCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ... (Kode untuk info pesanan tidak berubah)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: Text(
-                    sewa.detailMotor['nama'] ?? 'Nama Motor',
+                    sewa.detailMotor?.nama ?? 'Nama Motor',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -166,32 +164,26 @@ class BookingCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Chip(
                   label: Text(
-                    sewa.statusPemesanan,
+                    sewa.statusPemesanan.displayName,
                     style: const TextStyle(color: Colors.white, fontSize: 12),
                   ),
-                  backgroundColor: _getStatusColor(sewa.statusPemesanan),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 0,
-                  ),
+                  backgroundColor: _getStatusColor(sewa.statusPemesanan.value),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ],
             ),
             const Divider(),
-            Text('Penyewa: ${sewa.detailUser['nama'] ?? 'Nama Penyewa'}'),
-            Text('Telepon: ${sewa.detailUser['nomorTelepon'] ?? 'No. Telp'}'),
+            Text('Penyewa: ${sewa.detailUser?.nama ?? 'Nama Penyewa'}'),
+            Text('Telepon: ${sewa.detailUser?.nomorTelepon ?? 'No. Telp'}'),
             const SizedBox(height: 8),
-            Text('Sewa: ${dateFormat.format(sewa.tanggalSewa.toDate())}'),
-            Text('Kembali: ${dateFormat.format(sewa.tanggalKembali.toDate())}'),
+            Text('Sewa: ${dateFormat.format(sewa.tanggalSewa)}'),
+            Text('Kembali: ${dateFormat.format(sewa.tanggalKembali)}'),
             const SizedBox(height: 8),
             Text(
               'Total Biaya: Rp ${sewa.totalBiaya}',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-
-            // --- PERBAIKAN DI SINI ---
-            // Tampilkan tombol aksi secara dinamis
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: _buildActionButtons(context),

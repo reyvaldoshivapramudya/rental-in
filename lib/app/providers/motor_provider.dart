@@ -44,60 +44,51 @@ class MotorProvider with ChangeNotifier {
     );
   }
 
-  Future<void> fetchMotorsManual() async {
+  Future<void> refreshMotors() async {
     fetchMotors();
+    notifyListeners();
   }
 
-  Future<void> addMotor(MotorModel motorData, File imageFile) async {
+  Future<String> addMotor(MotorModel motorData, File imageFile) async {
     try {
       String imageUrl = await _firestoreService.uploadMotorImage(imageFile);
-      MotorModel motorComplete = MotorModel(
-        id: motorData.id,
-        nama: motorData.nama,
-        merek: motorData.merek,
-        tahun: motorData.tahun,
-        nomorPolisi: motorData.nomorPolisi,
-        hargaSewa: motorData.hargaSewa,
-        status: motorData.status,
-        gambarUrl: imageUrl,
-      );
-      await _firestoreService.addMotor(motorComplete);
+      MotorModel motorComplete = motorData.copyWith(gambarUrl: imageUrl);
+      String newMotorId = await _firestoreService.addMotor(motorComplete);
       fetchMotors();
+      return newMotorId;
     } catch (e) {
+      _errorMessage = 'Gagal menambahkan motor: $e';
+      notifyListeners();
       rethrow;
     }
   }
 
   Future<void> updateMotor(MotorModel motor, File? newImageFile) async {
     try {
-      // Tambahkan try-catch untuk penanganan error yang lebih baik
       String imageUrl = motor.gambarUrl;
       if (newImageFile != null) {
         imageUrl = await _firestoreService.uploadMotorImage(newImageFile);
       }
 
-      MotorModel updatedMotor = MotorModel(
-        id: motor.id,
-        nama: motor.nama,
-        merek: motor.merek,
-        tahun: motor.tahun,
-        nomorPolisi: motor.nomorPolisi,
-        hargaSewa: motor.hargaSewa,
-        status: motor.status,
-        gambarUrl: imageUrl,
-      );
+      MotorModel updatedMotor = motor.copyWith(gambarUrl: imageUrl);
       await _firestoreService.updateMotor(motor.id, updatedMotor.toFirestore());
-
-      // Panggil fetchMotors() untuk memperbarui list lokal setelah update berhasil.
       fetchMotors();
     } catch (e) {
-      // Jika terjadi error, lemparkan kembali agar bisa ditangkap di UI.
+      _errorMessage = 'Gagal mengupdate motor: $e';
+      notifyListeners();
       rethrow;
     }
   }
 
   Future<void> deleteMotor(String motorId) async {
-    await _firestoreService.deleteMotor(motorId);
+    try {
+      await _firestoreService.deleteMotor(motorId);
+      fetchMotors();
+    } catch (e) {
+      _errorMessage = 'Gagal menghapus motor: $e';
+      notifyListeners();
+      rethrow;
+    }
   }
 
   @override
