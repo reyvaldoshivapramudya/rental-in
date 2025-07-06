@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rentalin/app/config/theme.dart';
 import 'package:rentalin/app/data/models/motor_status.dart';
+import 'package:rentalin/app/data/models/sewa_model.dart';
 import 'package:rentalin/app/data/models/status_pemesanan.dart';
 import '../../../data/models/motor_model.dart';
 import '../../../providers/motor_provider.dart';
@@ -58,12 +59,8 @@ class MotorDetailScreen extends StatelessWidget {
           imageUrl = imageUrl.replaceFirst('http://', 'https://');
         }
 
-        final statusColor = motor.status == MotorStatus.tersedia
-            ? Colors.green
-            : Colors.orange;
-
-        return FutureBuilder(
-          future: sewaProvider.fetchBookedDates(motorId),
+        return FutureBuilder<SewaModel?>(
+          future: sewaProvider.checkUserPendingBooking(motorId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
@@ -71,15 +68,26 @@ class MotorDetailScreen extends StatelessWidget {
               );
             }
 
-            // Cek apakah motor sudah dibooking dan dikonfirmasi
-            final isBookedConfirmed = sewaProvider.bookedSchedules.any(
-              (sewa) =>
-                  sewa.motorId == motorId &&
-                  sewa.statusPemesanan.value.toLowerCase() == 'dikonfirmasi',
-            );
+            // MODIFIKASI: Tentukan status UI berdasarkan hasil snapshot
+            final SewaModel? userPendingBooking = snapshot.data;
+            final bool isUserWaitingForConfirmation =
+                userPendingBooking != null;
 
-            final isSewaEnabled =
-                motor.status == MotorStatus.tersedia && !isBookedConfirmed;
+            // Logika baru untuk mengaktifkan/menonaktifkan tombol sewa
+            final bool isSewaEnabled =
+                motor.status == MotorStatus.tersedia &&
+                !isUserWaitingForConfirmation;
+
+            // Logika baru untuk teks dan warna status
+            final String statusText = isUserWaitingForConfirmation
+                ? StatusPemesanan.menungguKonfirmasi.displayName
+                : motor.status.displayName;
+
+            final Color statusColor = isUserWaitingForConfirmation
+                ? StatusPemesanan.menungguKonfirmasi.statusColor
+                : (motor.status == MotorStatus.tersedia
+                      ? Colors.green
+                      : Colors.orange);
 
             return Scaffold(
               appBar: AppBar(title: Text(motor.nama)),
@@ -151,7 +159,7 @@ class MotorDetailScreen extends StatelessWidget {
                             children: [
                               Chip(
                                 label: Text(
-                                  motor.status.displayName,
+                                  statusText,
                                   style: const TextStyle(color: Colors.white),
                                 ),
                                 backgroundColor: statusColor,
@@ -224,7 +232,12 @@ class MotorDetailScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    isSewaEnabled ? 'Sewa Sekarang' : 'Sudah Dibooking',
+                    // isSewaEnabled ? 'Sewa Sekarang' : 'Sudah Dibooking',
+                    isUserWaitingForConfirmation
+                        ? 'Menunggu Konfirmasi'
+                        : (motor.status == MotorStatus.tersedia
+                              ? 'Sewa Sekarang'
+                              : motor.status.displayName),
                     style: TextStyle(
                       fontSize: 18,
                       color: isSewaEnabled ? Colors.black : Colors.white,

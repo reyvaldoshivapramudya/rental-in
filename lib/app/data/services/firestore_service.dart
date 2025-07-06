@@ -165,26 +165,6 @@ class FirestoreService {
     return null;
   }
 
-  /// 🔷 Update status sewa dan motor sekaligus (konfirmasi/tolak)
-  Future<void> updateSewaStatusAndMotor(
-    String sewaId,
-    String motorId,
-    String newStatusSewa,
-    String newStatusMotor,
-    String userPlayerId, // ⬅️ tambahkan playerId user di parameter
-  ) async {
-    WriteBatch batch = _db.batch();
-
-    DocumentReference sewaRef = _db.collection('sewa').doc(sewaId);
-    DocumentReference motorRef = _db.collection('motors').doc(motorId);
-
-    batch.update(sewaRef, {'statusPemesanan': newStatusSewa.toLowerCase()});
-    batch.update(motorRef, {'status': newStatusMotor.toLowerCase()});
-
-    // Commit batch
-    await batch.commit();
-  }
-
   /// 🔷 Update sewa saat selesai
   Future<void> updateSewaOnComplete({
     required String sewaId,

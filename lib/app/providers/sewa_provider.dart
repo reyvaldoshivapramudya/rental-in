@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:rentalin/app/data/models/motor_status.dart';
 import 'package:rentalin/app/data/models/status_pemesanan.dart';
+import 'package:rentalin/app/providers/auth_provider.dart';
 import '../data/models/motor_model.dart';
 import '../data/models/sewa_model.dart';
 import '../data/models/user_model.dart';
@@ -9,6 +11,8 @@ import '../data/services/firestore_service.dart';
 
 class SewaProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final AuthProvider _authProvider;
 
   // State untuk Admin
   StreamSubscription? _adminSewaSubscription;
@@ -33,7 +37,7 @@ class SewaProvider with ChangeNotifier {
   bool _isCheckingSchedule = false;
   bool get isCheckingSchedule => _isCheckingSchedule;
 
-  SewaProvider();
+  SewaProvider(this._authProvider);
 
   // Mengambil semua data sewa untuk Admin
   void fetchAllSewaForAdmin() {
@@ -121,6 +125,41 @@ class SewaProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Memeriksa apakah user saat ini memiliki booking yang sedang menunggu konfirmasi
+  /// untuk motor tertentu.
+  /// Mengembalikan `SewaModel` jika ada, dan `null` jika tidak ada.
+  Future<SewaModel?> checkUserPendingBooking(String motorId) async {
+    // Pastikan user sudah login
+    final userId = _authProvider.user?.uid;
+    if (userId == null) {
+      return null;
+    }
+
+    try {
+      final querySnapshot = await _firestore
+          .collection('sewa')
+          .where('motorId', isEqualTo: motorId)
+          .where('userId', isEqualTo: userId)
+          .where(
+            'statusPemesanan',
+            isEqualTo: StatusPemesanan.menungguKonfirmasi.value,
+          )
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        // Booking yang menunggu konfirmasi ditemukan
+        return SewaModel.fromFirestore(querySnapshot.docs.first);
+      }
+
+      // Tidak ada booking yang menunggu konfirmasi
+      return null;
+    } catch (e) {
+      debugPrint('Error checking user pending booking: $e');
+      return null;
+    }
+  }
+
   // --- FUNGSI BARU UNTUK MEMBERSIHKAN STATE ---
   // Penting untuk dipanggil saat keluar dari halaman booking
   void clearBookedDates() {
@@ -178,13 +217,6 @@ class SewaProvider with ChangeNotifier {
 
       await _firestoreService.addSewa(sewaBaru);
 
-      // 🛑 Jangan ubah status motor menjadi disewa langsung di sini.
-      // ✅ Ubah menjadi menungguKonfirmasi.
-      await _firestoreService.updateMotorStatus(
-        motor.id,
-        MotorStatus.menungguKonfirmasi,
-      );
-
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -195,35 +227,73 @@ class SewaProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> konfirmasiTolakPemesanan(
-    String sewaId,
-    String motorId,
-    bool isKonfirmasi,
-  ) async {
+  /// Fungsi cerdas untuk mengonfirmasi sebuah pesanan.
+  /// Ini akan mengubah status motor menjadi 'disewa' dan secara otomatis
+  /// menolak semua pesanan lain yang masih pending untuk motor yang sama.
+  Future<bool> konfirmasiPemesanan(SewaModel sewaDikonfirmasi) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      // Cari sewa terkait dari _adminSewaList
-      final sewa = _adminSewaList.firstWhere((s) => s.id == sewaId);
+      final batch = _firestore.batch();
 
-      // Ambil playerId dari detailUser
-      final userPlayerId = sewa.detailUser?.playerId;
+      // 1. Update status motor menjadi 'disewa'
+      final motorRef = _firestore
+          .collection('motors')
+          .doc(sewaDikonfirmasi.motorId);
+      batch.update(motorRef, {'status': MotorStatus.disewa.value});
 
-      if (userPlayerId == null) {
-        throw Exception('Player ID user tidak ditemukan.');
+      // 2. Update status sewa yang dikonfirmasi
+      final sewaRef = _firestore.collection('sewa').doc(sewaDikonfirmasi.id);
+      batch.update(sewaRef, {
+        'statusPemesanan': StatusPemesanan.dikonfirmasi.value,
+      });
+
+      // 3. Cari dan tolak semua booking lain yang masih 'menunggu_konfirmasi' untuk motor ini
+      final queryOtherPending = _firestore
+          .collection('sewa')
+          .where('motorId', isEqualTo: sewaDikonfirmasi.motorId)
+          .where(
+            'statusPemesanan',
+            isEqualTo: StatusPemesanan.menungguKonfirmasi.value,
+          );
+
+      final otherPendingDocs = await queryOtherPending.get();
+
+      for (final doc in otherPendingDocs.docs) {
+        if (doc.id != sewaDikonfirmasi.id) {
+          batch.update(doc.reference, {
+            'statusPemesanan': StatusPemesanan.ditolak.value,
+          });
+        }
       }
 
-      await _firestoreService.updateSewaStatusAndMotor(
-        sewaId,
-        motorId,
-        isKonfirmasi ? 'Dikonfirmasi' : 'Ditolak',
-        isKonfirmasi ? 'disewa' : 'tersedia',
-        userPlayerId, // ⬅️ tambahkan di sini
-      );
+      // 4. Jalankan semua perubahan dalam satu transaksi
+      await batch.commit();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
+      debugPrint('Error konfirmasiPemesanan: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Fungsi sederhana untuk menolak sebuah pesanan.
+  /// Fungsi ini HANYA mengubah status pesanan yang dipilih, tidak menyentuh status motor.
+  Future<bool> tolakPemesanan(SewaModel sewaDitolak) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final sewaRef = _firestore.collection('sewa').doc(sewaDitolak.id);
+      await sewaRef.update({'statusPemesanan': StatusPemesanan.ditolak.value});
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      debugPrint('Error tolakPemesanan: $e');
       return false;
     } finally {
       _isLoading = false;

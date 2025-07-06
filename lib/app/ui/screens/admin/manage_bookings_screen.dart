@@ -105,11 +105,8 @@ class BookingCard extends StatelessWidget {
         children: [
           OutlinedButton(
             onPressed: () async {
-              await sewaProvider.konfirmasiTolakPemesanan(
-                sewa.id,
-                sewa.motorId,
-                false,
-              );
+              // Panggil fungsi tolakPemesanan yang baru, cukup kirim object 'sewa'
+              await sewaProvider.tolakPemesanan(sewa);
 
               // ✅ Kirim notifikasi penolakan booking ke user
               final playerId = sewa.detailUser?.playerId;
@@ -127,11 +124,8 @@ class BookingCard extends StatelessWidget {
           const SizedBox(width: 8),
           FilledButton(
             onPressed: () async {
-              await sewaProvider.konfirmasiTolakPemesanan(
-                sewa.id,
-                sewa.motorId,
-                true,
-              );
+              // Panggil fungsi konfirmasiPemesanan yang baru, cukup kirim object 'sewa'
+              await sewaProvider.konfirmasiPemesanan(sewa);
 
               // ✅ Kirim notifikasi konfirmasi booking ke user
               final playerId = sewa.detailUser?.playerId;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:rentalin/app/config/theme.dart';
+import 'package:rentalin/app/data/models/status_pemesanan.dart';
 import '../../../data/models/motor_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/sewa_provider.dart';
@@ -42,23 +43,27 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
   bool _isDateSelectable(DateTime day) {
     final sewaProvider = Provider.of<SewaProvider>(context, listen: false);
     for (final schedule in sewaProvider.bookedSchedules) {
-      final startDate = DateTime(
-        schedule.tanggalSewa.year,
-        schedule.tanggalSewa.month,
-        schedule.tanggalSewa.day,
-      );
-      final endDate = DateTime(
-        schedule.tanggalKembali.year,
-        schedule.tanggalKembali.month,
-        schedule.tanggalKembali.day,
-      );
-      final dayToCheck = DateTime(day.year, day.month, day.day);
+      // 🔽 TAMBAHKAN KONDISI INI 🔽
+      // Hanya nonaktifkan tanggal untuk booking yang sudah DIKONFIRMASI.
+      if (schedule.statusPemesanan == StatusPemesanan.dikonfirmasi) {
+        final startDate = DateTime(
+          schedule.tanggalSewa.year,
+          schedule.tanggalSewa.month,
+          schedule.tanggalSewa.day,
+        );
+        final endDate = DateTime(
+          schedule.tanggalKembali.year,
+          schedule.tanggalKembali.month,
+          schedule.tanggalKembali.day,
+        );
+        final dayToCheck = DateTime(day.year, day.month, day.day);
 
-      if (!dayToCheck.isBefore(startDate) && !dayToCheck.isAfter(endDate)) {
-        return false;
+        if (!dayToCheck.isBefore(startDate) && !dayToCheck.isAfter(endDate)) {
+          return false; // Tidak dapat dipilih
+        }
       }
     }
-    return true;
+    return true; // Dapat dipilih
   }
 
   void _calculateBill() {

@@ -34,7 +34,10 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => MotorProvider()),
-        ChangeNotifierProvider(create: (_) => SewaProvider()),
+        ChangeNotifierProvider(
+          create: (context) =>
+              SewaProvider(Provider.of<AuthProvider>(context, listen: false)),
+        ),
       ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
