@@ -18,9 +18,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _teleponController = TextEditingController();
   final _alamatController = TextEditingController();
 
+  // 🔶 New: FocusNodes for each field
+  final _namaFocus = FocusNode();
+  final _teleponFocus = FocusNode();
+  final _alamatFocus = FocusNode();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+  final _confirmPasswordFocus = FocusNode();
+
   bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible =
-      false; // 🔶 d. Granular toggle confirm password
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void dispose() {
@@ -30,6 +37,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _confirmPasswordController.dispose();
     _teleponController.dispose();
     _alamatController.dispose();
+
+    // 🔶 Dispose FocusNodes
+    _namaFocus.dispose();
+    _teleponFocus.dispose();
+    _alamatFocus.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    _confirmPasswordFocus.dispose();
+
     super.dispose();
   }
 
@@ -49,6 +65,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _alamatController.text.trim(),
       );
 
+      if (!mounted) return;
+
       messenger.showSnackBar(
         const SnackBar(
           content: Text('Registrasi berhasil!'),
@@ -57,7 +75,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       navigator.pop();
     } catch (e) {
-      // 🔶 c. Error Message Clarity with AuthException
       final message = e is AuthException
           ? e.message
           : 'Terjadi kesalahan. Coba lagi.';
@@ -101,10 +118,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 32),
                     TextFormField(
                       controller: _namaController,
-                      textInputAction:
-                          TextInputAction.next, // 🔶 f. Focus Management
-                      onFieldSubmitted: (_) =>
-                          FocusScope.of(context).nextFocus(),
+                      focusNode: _namaFocus,
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_teleponFocus);
+                      },
                       decoration: const InputDecoration(
                         labelText: 'Nama Lengkap',
                       ),
@@ -114,24 +132,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _teleponController,
+                      focusNode: _teleponFocus,
                       keyboardType: TextInputType.phone,
-                      textInputAction: TextInputAction.next, // 🔶 f
-                      onFieldSubmitted: (_) =>
-                          FocusScope.of(context).nextFocus(),
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_alamatFocus);
+                      },
                       decoration: const InputDecoration(
                         labelText: 'Nomor Telepon (WA)',
                       ),
-                      validator: (v) => v!.isEmpty
-                          ? 'Nomor telepon tidak boleh kosong'
-                          : null,
+                      validator: (v) {
+                        if (v!.isEmpty) {
+                          return 'Nomor telepon tidak boleh kosong';
+                        }
+                        if (v.length < 10) return 'Nomor telepon tidak valid';
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _alamatController,
+                      focusNode: _alamatFocus,
                       keyboardType: TextInputType.streetAddress,
-                      textInputAction: TextInputAction.next, // 🔶 f
-                      onFieldSubmitted: (_) =>
-                          FocusScope.of(context).nextFocus(),
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_emailFocus);
+                      },
                       decoration: const InputDecoration(
                         labelText: 'Alamat Lengkap',
                         hintText: 'Contoh: Jl. Pahlawan No. 123...',
@@ -143,10 +169,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _emailController,
+                      focusNode: _emailFocus,
                       keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next, // 🔶 f
-                      onFieldSubmitted: (_) =>
-                          FocusScope.of(context).nextFocus(),
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_passwordFocus);
+                      },
                       decoration: const InputDecoration(labelText: 'Email'),
                       validator: (v) {
                         if (v!.isEmpty) return 'Email tidak boleh kosong';
@@ -157,12 +185,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _passwordController,
+                      focusNode: _passwordFocus,
                       obscureText: !_isPasswordVisible,
-                      keyboardType:
-                          TextInputType.visiblePassword, // 🔶 e. Accessibility
-                      textInputAction: TextInputAction.next, // 🔶 f
-                      onFieldSubmitted: (_) =>
-                          FocusScope.of(context).nextFocus(),
+                      keyboardType: TextInputType.visiblePassword,
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(
+                          context,
+                        ).requestFocus(_confirmPasswordFocus);
+                      },
                       decoration: InputDecoration(
                         labelText: 'Password',
                         suffixIcon: IconButton(
@@ -185,10 +216,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _confirmPasswordController,
-                      obscureText:
-                          !_isConfirmPasswordVisible, // 🔶 d. Separate visibility
-                      keyboardType: TextInputType.visiblePassword, // 🔶 e
-                      textInputAction: TextInputAction.done, // 🔶 f
+                      focusNode: _confirmPasswordFocus,
+                      obscureText: !_isConfirmPasswordVisible,
+                      keyboardType: TextInputType.visiblePassword,
+                      textInputAction: TextInputAction.done,
                       decoration: InputDecoration(
                         labelText: 'Konfirmasi Password',
                         suffixIcon: IconButton(
@@ -203,12 +234,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                       ),
-                      // 🔶 b. Validator Password Confirmation Implementation
                       validator: (v) {
-                        if (v == null || v.isEmpty)
+                        if (v == null || v.isEmpty) {
                           return 'Konfirmasi password tidak boleh kosong';
-                        if (v != _passwordController.text)
+                        }
+                        if (v != _passwordController.text) {
                           return 'Password tidak cocok';
+                        }
                         return null;
                       },
                     ),
@@ -216,8 +248,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ElevatedButton(
                       onPressed: auth.isLoading ? null : _register,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
-                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: auth.isLoading

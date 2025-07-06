@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rentalin/app/providers/sewa_provider.dart';
+import 'package:rentalin/app/config/theme.dart';
+import 'package:rentalin/app/ui/screens/user/developer_screen.dart';
 import 'package:rentalin/app/ui/screens/user/profile_screen.dart';
-import '../../../providers/auth_provider.dart';
+import 'package:rentalin/app/ui/screens/user/tentang_screen.dart';
 import '../../../providers/motor_provider.dart';
 import '../../../data/models/motor_model.dart';
 import 'history_screen.dart';
 import 'motor_detail_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -42,7 +44,6 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Riwayat'),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blueAccent,
         onTap: _onItemTapped,
       ),
     );
@@ -66,9 +67,28 @@ class _MotorListTabState extends State<MotorListTab> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _refreshMotors(context),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshMotors(context);
+      _loadViewPreference();
+    });
+  }
+
+  // Load saved preference on startup
+  Future<void> _loadViewPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return; // ✅ check if still mounted
+    setState(() {
+      _isGridView = prefs.getBool('isGridView') ?? false;
+    });
+  }
+
+  // Save preference whenever toggled
+  Future<void> _toggleViewPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isGridView = !_isGridView;
+    });
+    await prefs.setBool('isGridView', _isGridView);
   }
 
   @override
@@ -76,12 +96,10 @@ class _MotorListTabState extends State<MotorListTab> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pilih Motor'),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view),
-            onPressed: () => setState(() => _isGridView = !_isGridView),
+            onPressed: () => _toggleViewPreference(),
           ),
           IconButton(
             icon: const Icon(Icons.person),
@@ -92,42 +110,9 @@ class _MotorListTabState extends State<MotorListTab> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Konfirmasi Logout'),
-                  content: const Text('Apakah Anda yakin ingin keluar?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      child: const Text('Batal'),
-                    ),
-                    FilledButton(
-                      onPressed: () async {
-                        Navigator.of(ctx).pop();
-                        final authProvider = Provider.of<AuthProvider>(
-                          context,
-                          listen: false,
-                        );
-                        final sewaProvider = Provider.of<SewaProvider>(
-                          context,
-                          listen: false,
-                        );
-                        sewaProvider.clearUserSewaData();
-                        await authProvider.logout();
-                      },
-                      child: const Text('Logout'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
         ],
       ),
+      drawer: buildAppDrawer(context),
       body: RefreshIndicator(
         onRefresh: () => _refreshMotors(context),
         child: Consumer<MotorProvider>(
@@ -143,13 +128,19 @@ class _MotorListTabState extends State<MotorListTab> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: SizedBox(
                       height: constraints.maxHeight,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.motorcycle, size: 64, color: Colors.grey),
-                          SizedBox(height: 16),
-                          Text('Belum ada motor yang tersedia.'),
-                        ],
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(
+                              Icons.motorcycle,
+                              size: 64,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 16),
+                            Text('Belum ada motor yang tersedia.'),
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -162,6 +153,78 @@ class _MotorListTabState extends State<MotorListTab> {
                 : buildListView(motorProvider.motors);
           },
         ),
+      ),
+    );
+  }
+
+  Widget buildAppDrawer(BuildContext context) {
+    return Drawer(
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                DrawerHeader(
+                  decoration: const BoxDecoration(color: AppTheme.primaryColor),
+                  child: Center(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Image.asset('assets/icon/icon.png', width: 130, height: 130),
+                      ],
+                    ),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.info),
+                  title: const Text('Tentang Perusahaan'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TentangScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.people),
+                  title: const Text('Developer'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DeveloperScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Contact Person:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 4),
+                Text('0812-3450-5088'),
+                SizedBox(height: 12),
+                Text('Alamat:', style: TextStyle(fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
+                Text(
+                  'Jl. Watusari, Gg. Duku No.40, Watumas, Purwanegara, Purwokerto Utara',
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -217,14 +280,10 @@ class MotorCard extends StatelessWidget {
     );
 
     final lihatDetailWidget = isGridView
-        ? const Icon(
-            Icons.arrow_forward_ios,
-            size: 14,
-            color: Colors.blueAccent,
-          )
+        ? const Icon(Icons.arrow_forward_ios, size: 14)
         : const Text(
             'Lihat Detail >',
-            style: TextStyle(color: Colors.blueAccent),
+            style: TextStyle(fontWeight: FontWeight.bold),
           );
 
     return Card(
@@ -300,7 +359,6 @@ class MotorCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: isGridView ? 14 : 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blueAccent,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),

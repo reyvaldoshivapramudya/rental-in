@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:rentalin/app/data/models/status_pemesanan.dart';
 import '../../../data/models/sewa_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/sewa_provider.dart';
@@ -15,6 +16,7 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   late SewaProvider _sewaProvider;
+  String _selectedFilter = 'Semua';
 
   @override
   void initState() {
@@ -28,6 +30,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> _fetchHistory() async {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
+    if (!mounted) return;
     if (user != null) {
       _sewaProvider.fetchSewaForCurrentUser(user.uid);
     }
@@ -44,8 +47,32 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Riwayat Pesanan'),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.filter_list),
+            tooltip: 'Filter Pesanan',
+            onSelected: (value) {
+              setState(() {
+                _selectedFilter = value;
+              });
+            },
+            itemBuilder: (context) {
+              return [
+                const PopupMenuItem(value: 'Semua', child: Text('Semua')),
+                const PopupMenuItem(
+                  value: 'Menunggu Konfirmasi',
+                  child: Text('Menunggu Konfirmasi'),
+                ),
+                const PopupMenuItem(
+                  value: 'Dikonfirmasi',
+                  child: Text('Dikonfirmasi'),
+                ),
+                const PopupMenuItem(value: 'Ditolak', child: Text('Ditolak')),
+                const PopupMenuItem(value: 'Selesai', child: Text('Selesai')),
+              ];
+            },
+          ),
+        ],
       ),
       body: Consumer<SewaProvider>(
         builder: (context, sewaProvider, child) {
@@ -56,30 +83,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
           if (sewaProvider.userSewaList.isEmpty) {
             return RefreshIndicator(
               onRefresh: _fetchHistory,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.7,
-                    child: const Center(
-                      child: Text('Anda belum pernah melakukan pesanan.'),
-                    ),
-                  ),
-                ],
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.history, size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text('Anda belum pernah melakukan pesanan.'),
+                  ],
+                ),
               ),
             );
           }
+
+          // Filter list berdasarkan _selectedFilter
+          final filteredList = sewaProvider.userSewaList.where((sewa) {
+            if (_selectedFilter == 'Semua') return true;
+            return sewa.statusPemesanan.displayName.toLowerCase() ==
+                _selectedFilter.toLowerCase();
+          }).toList()..sort((a, b) => b.tanggalSewa.compareTo(a.tanggalSewa));
 
           return RefreshIndicator(
             onRefresh: _fetchHistory,
             child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: sewaProvider.userSewaList.length,
+              itemCount: filteredList.length,
               itemBuilder: (context, index) {
-                final sortedList = List<SewaModel>.from(
-                  sewaProvider.userSewaList,
-                )..sort((a, b) => b.tanggalSewa.compareTo(a.tanggalSewa));
-                final sewa = sortedList[index];
+                final sewa = filteredList[index];
                 return HistoryCard(sewa: sewa);
               },
             ),
@@ -113,6 +143,11 @@ class HistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('d MMM yy', 'id_ID');
     final imageUrl = sewa.detailMotor?.gambarUrl ?? '';
+    final currencyFormat = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -157,7 +192,7 @@ class HistoryCard extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
-                      Text('Total: Rp ${sewa.totalBiaya}'),
+                      Text('Total: ${currencyFormat.format(sewa.totalBiaya)}'),
                     ],
                   ),
                 ),
@@ -176,6 +211,29 @@ class HistoryCard extends StatelessWidget {
             const Divider(height: 20),
             Text('Disewa dari: ${dateFormat.format(sewa.tanggalSewa)}'),
             Text('Hingga: ${dateFormat.format(sewa.tanggalKembali)}'),
+
+            // 🔶 TAMBAHKAN TANGGAL PENGEMBALIAN AKTUAL JIKA ADA
+            if (sewa.tanggalPengembalianAktual != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  'Dikembalikan pada: ${dateFormat.format(sewa.tanggalPengembalianAktual!)}',
+                  style: const TextStyle(color: Colors.black87),
+                ),
+              ),
+
+            // 🔶 TAMBAHKAN DENDA JIKA ADA
+            if (sewa.totalDenda != null && sewa.totalDenda! > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Text(
+                  'Denda keterlambatan: ${currencyFormat.format(sewa.totalDenda)}',
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

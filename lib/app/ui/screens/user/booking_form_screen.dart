@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:rentalin/app/config/theme.dart';
 import '../../../data/models/motor_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/sewa_provider.dart';
@@ -15,7 +16,7 @@ class BookingFormScreen extends StatefulWidget {
 }
 
 class _BookingFormScreenState extends State<BookingFormScreen> {
-  late final SewaProvider _sewaProvider;
+  SewaProvider? _sewaProvider;
   DateTime? _tanggalSewa;
   DateTime? _tanggalKembali;
   int _durasi = 0;
@@ -27,21 +28,14 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     initializeDateFormatting('id_ID', null);
 
     _sewaProvider = Provider.of<SewaProvider>(context, listen: false);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _sewaProvider.fetchBookedDates(widget.motor.id);
+      _sewaProvider?.fetchBookedDates(widget.motor.id);
     });
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _sewaProvider = Provider.of<SewaProvider>(context, listen: false);
-  }
-
-  @override
   void dispose() {
-    _sewaProvider.clearBookedDates();
+    _sewaProvider?.clearBookedDates();
     super.dispose();
   }
 
@@ -68,18 +62,13 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
   }
 
   void _calculateBill() {
-    if (_tanggalSewa != null && _tanggalKembali != null) {
-      if (!_tanggalKembali!.isBefore(_tanggalSewa!)) {
-        setState(() {
-          _durasi = _tanggalKembali!.difference(_tanggalSewa!).inDays + 1;
-          _totalBiaya = _durasi * widget.motor.hargaSewa;
-        });
-      } else {
-        setState(() {
-          _durasi = 0;
-          _totalBiaya = 0;
-        });
-      }
+    if (_tanggalSewa != null &&
+        _tanggalKembali != null &&
+        !_tanggalKembali!.isBefore(_tanggalSewa!)) {
+      setState(() {
+        _durasi = _tanggalKembali!.difference(_tanggalSewa!).inDays + 1;
+        _totalBiaya = _durasi * widget.motor.hargaSewa;
+      });
     } else {
       setState(() {
         _durasi = 0;
@@ -147,7 +136,10 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Konfirmasi'),
+            child: const Text(
+              'Konfirmasi',
+              style: TextStyle(color: Colors.black),
+            ),
           ),
         ],
       ),
@@ -160,6 +152,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
       motor: widget.motor,
       tanggalSewa: _tanggalSewa!,
       tanggalKembali: _tanggalKembali!,
+      // Pastikan createSewa default status = menunggu konfirmasi
     );
 
     if (!mounted) return;
@@ -169,7 +162,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
       messenger.showSnackBar(
         const SnackBar(
           content: Text(
-            'Booking berhasil! Silahkan datang ke rental kami dengan membawa kartu identitas diri.',
+            'Booking berhasil! Silahkan Menunggu Konfirmasi dari admin.',
           ),
           backgroundColor: Colors.green,
         ),
@@ -190,11 +183,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     final dateFormat = DateFormat('d MMMM yyyy', 'id_ID');
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Formulir Booking'),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text('Formulir Booking')),
       body: Consumer<SewaProvider>(
         builder: (context, sewaProvider, child) {
           if (sewaProvider.isCheckingSchedule) {
@@ -253,10 +242,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                     ),
                     Text(
                       'Rp $_totalBiaya',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blueAccent,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -280,7 +266,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 backgroundColor: isButtonEnabled
-                    ? Colors.blueAccent
+                    ? AppTheme.primaryColor
                     : Colors.grey,
               ),
               child: sewa.isLoading
@@ -291,7 +277,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                     )
                   : const Text(
                       'Konfirmasi Booking',
-                      style: TextStyle(fontSize: 18),
+                      style: TextStyle(fontSize: 18, color: Colors.black),
                     ),
             );
           },

@@ -16,9 +16,12 @@ class SewaModel extends Equatable {
   final StatusPemesanan statusPemesanan;
   final MotorModel? detailMotor;
   final UserModel? detailUser;
-  final String? catatanAdmin;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  // 🔶 FIELD BARU
+  final DateTime? tanggalPengembalianAktual;
+  final int? totalDenda;
 
   const SewaModel({
     required this.id,
@@ -30,10 +33,62 @@ class SewaModel extends Equatable {
     required this.statusPemesanan,
     this.detailMotor,
     this.detailUser,
-    this.catatanAdmin,
     this.createdAt,
     this.updatedAt,
+    this.tanggalPengembalianAktual,
+    this.totalDenda,
   });
+
+  static UserModel _parseUserFromMap(Map<String, dynamic> data) {
+    return UserModel(
+      uid: data['uid'] ?? '',
+      nama: data['nama'] ?? '',
+      email: data['email'] ?? '',
+      role: UserRole.fromString(data['role'] ?? 'user'),
+      nomorTelepon: data['nomorTelepon'] ?? '',
+      alamat: data['alamat'] ?? '',
+      createdAt: data['createdAt'] != null
+          ? (data['createdAt'] is Timestamp
+                ? (data['createdAt'] as Timestamp).toDate()
+                : DateTime.tryParse(data['createdAt'].toString()))
+          : null,
+      updatedAt: data['updatedAt'] != null
+          ? (data['updatedAt'] is Timestamp
+                ? (data['updatedAt'] as Timestamp).toDate()
+                : DateTime.tryParse(data['updatedAt'].toString()))
+          : null,
+    );
+  }
+
+  static MotorModel _parseMotorFromMap(Map<String, dynamic> data) {
+    return MotorModel(
+      id: data['id'] ?? '',
+      nama: data['nama'] ?? '',
+      merek: data['merek'] ?? '',
+      tahun: data['tahun'] is int
+          ? data['tahun']
+          : int.tryParse(
+                  data['tahun']?.toString() ?? '${DateTime.now().year}',
+                ) ??
+                DateTime.now().year,
+      nomorPolisi: data['nomorPolisi'] ?? '',
+      hargaSewa: data['hargaSewa'] is int
+          ? data['hargaSewa']
+          : int.tryParse(data['hargaSewa']?.toString() ?? '0') ?? 0,
+      status: MotorStatus.fromString(data['status'] ?? 'tersedia'),
+      gambarUrl: data['gambarUrl'] ?? '',
+      createdAt: data['createdAt'] != null
+          ? (data['createdAt'] is Timestamp
+                ? (data['createdAt'] as Timestamp).toDate()
+                : DateTime.tryParse(data['createdAt'].toString()))
+          : null,
+      updatedAt: data['updatedAt'] != null
+          ? (data['updatedAt'] is Timestamp
+                ? (data['updatedAt'] as Timestamp).toDate()
+                : DateTime.tryParse(data['updatedAt'].toString()))
+          : null,
+    );
+  }
 
   factory SewaModel.fromFirestore(DocumentSnapshot doc) {
     try {
@@ -44,52 +99,38 @@ class SewaModel extends Equatable {
         id: doc.id,
         userId: data['userId'] ?? '',
         motorId: data['motorId'] ?? '',
-        tanggalSewa: (data['tanggalSewa'] as Timestamp?)?.toDate() ?? DateTime.now(),
-        tanggalKembali: (data['tanggalKembali'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        tanggalSewa:
+            (data['tanggalSewa'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        tanggalKembali:
+            (data['tanggalKembali'] as Timestamp?)?.toDate() ?? DateTime.now(),
         totalBiaya: data['totalBiaya'] ?? 0,
-        statusPemesanan: StatusPemesanan.fromString(data['statusPemesanan'] ?? 'menunggu_konfirmasi'),
-        detailMotor: data['detailMotor'] != null ? _parseMotorFromMap(data['detailMotor']) : null,
-        detailUser: data['detailUser'] != null ? _parseUserFromMap(data['detailUser']) : null,
-        catatanAdmin: data['catatanAdmin']?.toString().trim(),
-        createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
-        updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+        statusPemesanan: statusPemesananFromString(
+          data['statusPemesanan'] ?? 'menunggu_konfirmasi',
+        ),
+        detailMotor: data['detailMotor'] != null
+            ? _parseMotorFromMap(data['detailMotor'])
+            : null,
+        detailUser: data['detailUser'] != null
+            ? _parseUserFromMap(data['detailUser'])
+            : null,
+        createdAt: data['createdAt'] != null
+            ? (data['createdAt'] is Timestamp
+                  ? (data['createdAt'] as Timestamp).toDate()
+                  : DateTime.tryParse(data['createdAt'].toString()))
+            : null,
+        updatedAt: data['updatedAt'] != null
+            ? (data['updatedAt'] is Timestamp
+                  ? (data['updatedAt'] as Timestamp).toDate()
+                  : DateTime.tryParse(data['updatedAt'].toString()))
+            : null,
+        tanggalPengembalianAktual:
+            (data['tanggalPengembalianAktual'] as Timestamp?)?.toDate(),
+        totalDenda: data['totalDenda'] != null
+            ? (data['totalDenda'] as num).toInt()
+            : null,
       );
     } catch (e) {
       throw Exception('Error parsing SewaModel from Firestore: $e');
-    }
-  }
-
-  static MotorModel? _parseMotorFromMap(dynamic data) {
-    if (data is! Map<String, dynamic>) return null;
-    try {
-      return MotorModel(
-        id: data['id'] ?? '',
-        nama: data['nama'] ?? '',
-        merek: data['merek'] ?? '',
-        tahun: data['tahun'] ?? DateTime.now().year,
-        nomorPolisi: data['nomorPolisi'] ?? '',
-        hargaSewa: data['hargaSewa'] ?? 0,
-        status: MotorStatus.fromString(data['status'] ?? 'tersedia'),
-        gambarUrl: data['gambarUrl'] ?? '',
-      );
-    } catch (e) {
-      return null;
-    }
-  }
-
-  static UserModel? _parseUserFromMap(dynamic data) {
-    if (data is! Map<String, dynamic>) return null;
-    try {
-      return UserModel(
-        uid: data['uid'] ?? '',
-        nama: data['nama'] ?? '',
-        email: data['email'] ?? '',
-        role: UserRole.fromString(data['role'] ?? 'user'),
-        nomorTelepon: data['nomorTelepon'] ?? '',
-        alamat: data['alamat'] ?? '',
-      );
-    } catch (e) {
-      return null;
     }
   }
 
@@ -104,9 +145,15 @@ class SewaModel extends Equatable {
       'statusPemesanan': statusPemesanan.value,
       'detailMotor': detailMotor?.toFirestore(),
       'detailUser': detailUser?.toFirestore(),
-      'catatanAdmin': catatanAdmin?.trim(),
-      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'createdAt': createdAt != null
+          ? Timestamp.fromDate(createdAt!)
+          : FieldValue.serverTimestamp(),
       'updatedAt': Timestamp.fromDate(now),
+      if (tanggalPengembalianAktual != null)
+        'tanggalPengembalianAktual': Timestamp.fromDate(
+          tanggalPengembalianAktual!,
+        ),
+      if (totalDenda != null) 'totalDenda': totalDenda,
     };
   }
 
@@ -120,9 +167,10 @@ class SewaModel extends Equatable {
     StatusPemesanan? statusPemesanan,
     MotorModel? detailMotor,
     UserModel? detailUser,
-    String? catatanAdmin,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? tanggalPengembalianAktual,
+    int? totalDenda,
   }) {
     return SewaModel(
       id: id ?? this.id,
@@ -134,9 +182,11 @@ class SewaModel extends Equatable {
       statusPemesanan: statusPemesanan ?? this.statusPemesanan,
       detailMotor: detailMotor ?? this.detailMotor,
       detailUser: detailUser ?? this.detailUser,
-      catatanAdmin: catatanAdmin ?? this.catatanAdmin,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      tanggalPengembalianAktual:
+          tanggalPengembalianAktual ?? this.tanggalPengembalianAktual,
+      totalDenda: totalDenda ?? this.totalDenda,
     );
   }
 
@@ -149,17 +199,18 @@ class SewaModel extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        userId,
-        motorId,
-        tanggalSewa,
-        tanggalKembali,
-        totalBiaya,
-        statusPemesanan,
-        detailMotor,
-        detailUser,
-        catatanAdmin,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    userId,
+    motorId,
+    tanggalSewa,
+    tanggalKembali,
+    totalBiaya,
+    statusPemesanan,
+    detailMotor,
+    detailUser,
+    createdAt,
+    updatedAt,
+    tanggalPengembalianAktual,
+    totalDenda,
+  ];
 }

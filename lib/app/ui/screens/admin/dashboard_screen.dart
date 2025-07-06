@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rentalin/app/config/theme.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/sewa_provider.dart';
 import 'motor_form_screen.dart';
@@ -19,8 +20,6 @@ class DashboardScreen extends StatelessWidget {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text('Dashboard Admin'),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
         elevation: 0,
         actions: [
           IconButton(
@@ -34,7 +33,10 @@ class DashboardScreen extends StatelessWidget {
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(ctx).pop(),
-                      child: const Text('Batal'),
+                      child: const Text(
+                        'Batal',
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ),
                     FilledButton(
                       onPressed: () {
@@ -44,7 +46,10 @@ class DashboardScreen extends StatelessWidget {
                           authProvider.logout();
                         });
                       },
-                      child: const Text('Logout'),
+                      child: const Text(
+                        'Logout',
+                        style: TextStyle(color: Colors.black),
+                      ),
                     ),
                   ],
                 ),
@@ -88,23 +93,16 @@ class DashboardScreen extends StatelessWidget {
                   title: 'Manajemen Booking',
                   subtitle: 'Konfirmasi pesanan',
                   color: Colors.blue,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const ManageBookingsScreen(),
-                    ),
-                  ),
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ManageBookingsScreen(),
+                      ),
+                    );
+                    sewaProvider
+                        .fetchAllSewaForAdmin(); // Refresh data setelah kembali
+                  },
                 ),
-                // DashboardCard(
-                //   icon: Icons.bar_chart_outlined,
-                //   title: 'Laporan',
-                //   subtitle: 'Statistik rental',
-                //   color: Colors.purple,
-                //   onTap: () {
-                //     ScaffoldMessenger.of(context).showSnackBar(
-                //       const SnackBar(content: Text('Fitur Laporan segera hadir!')),
-                //     );
-                //   },
-                // ),
               ],
             ),
           ),
@@ -118,7 +116,7 @@ class DashboardScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
       decoration: const BoxDecoration(
-        color: Colors.blueAccent,
+        color: AppTheme.primaryColor,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
@@ -129,19 +127,11 @@ class DashboardScreen extends StatelessWidget {
         children: [
           const Text(
             'Selamat Datang!',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-            ),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
           ),
           Text(
             adminEmail,
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -169,7 +159,7 @@ class DashboardCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 4.0,
-      shadowColor: color.withOpacity(0.3),
+      shadowColor: color.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: InkWell(
         onTap: onTap,
@@ -182,7 +172,7 @@ class DashboardCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: color.withOpacity(0.15),
+                backgroundColor: color.withValues(alpha: 0.15),
                 child: Icon(icon, size: 28, color: color),
               ),
               const Spacer(),

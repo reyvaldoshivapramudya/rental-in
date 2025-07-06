@@ -2,7 +2,7 @@ enum MotorStatus {
   tersedia('tersedia'),
   tidakTersedia('tidak tersedia'),
   disewa('disewa'),
-  maintenance('maintenance');
+  menungguKonfirmasi('menunggu konfirmasi');
 
   const MotorStatus(this.value);
   final String value;
@@ -11,14 +11,21 @@ enum MotorStatus {
     switch (value.toLowerCase()) {
       case 'disewa':
         return MotorStatus.disewa;
-      case 'maintenance':
-        return MotorStatus.maintenance;
+      case 'menunggu konfirmasi':
+        return MotorStatus.menungguKonfirmasi;
       case 'tidak tersedia':
         return MotorStatus.tidakTersedia;
       case 'tersedia':
       default:
         return MotorStatus.tersedia;
     }
+  }
+
+  static MotorStatus fromValue(String value) {
+    return MotorStatus.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => MotorStatus.tersedia,
+    );
   }
 
   String get displayName {
@@ -29,8 +36,8 @@ enum MotorStatus {
         return 'Tidak Tersedia';
       case MotorStatus.disewa:
         return 'Disewa';
-      case MotorStatus.maintenance:
-        return 'Maintenance';
+      case MotorStatus.menungguKonfirmasi:
+        return 'Menunggu Konfirmasi';
     }
   }
 }

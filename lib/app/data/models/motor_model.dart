@@ -12,7 +12,6 @@ class MotorModel extends Equatable {
   final int hargaSewa;
   final MotorStatus status;
   final String gambarUrl;
-  final String? deskripsi;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -25,7 +24,6 @@ class MotorModel extends Equatable {
     required this.hargaSewa,
     required this.status,
     required this.gambarUrl,
-    this.deskripsi,
     this.createdAt,
     this.updatedAt,
   });
@@ -44,7 +42,6 @@ class MotorModel extends Equatable {
         hargaSewa: data['hargaSewa'] as int? ?? 0,
         status: MotorStatus.fromString(data['status']?.toString() ?? 'tersedia'),
         gambarUrl: data['gambarUrl']?.toString().trim() ?? '',
-        deskripsi: data['deskripsi']?.toString().trim(),
         createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
         updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
       );
@@ -63,7 +60,6 @@ class MotorModel extends Equatable {
       'hargaSewa': hargaSewa,
       'status': status.value,
       'gambarUrl': gambarUrl.trim(),
-      'deskripsi': deskripsi?.trim(),
       'createdAt': createdAt != null
           ? Timestamp.fromDate(createdAt!)
           : FieldValue.serverTimestamp(),
@@ -81,7 +77,6 @@ class MotorModel extends Equatable {
         hargaSewa: json['hargaSewa'],
         status: MotorStatus.fromString(json['status']),
         gambarUrl: json['gambarUrl'],
-        deskripsi: json['deskripsi'],
         createdAt: DateTime.tryParse(json['createdAt'] ?? ''),
         updatedAt: DateTime.tryParse(json['updatedAt'] ?? ''),
       );
@@ -95,7 +90,6 @@ class MotorModel extends Equatable {
         'hargaSewa': hargaSewa,
         'status': status.value,
         'gambarUrl': gambarUrl,
-        'deskripsi': deskripsi,
         'createdAt': createdAt?.toIso8601String(),
         'updatedAt': updatedAt?.toIso8601String(),
       };
@@ -123,7 +117,6 @@ class MotorModel extends Equatable {
       hargaSewa: hargaSewa ?? this.hargaSewa,
       status: status ?? this.status,
       gambarUrl: gambarUrl ?? this.gambarUrl,
-      deskripsi: deskripsi ?? this.deskripsi,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -132,7 +125,7 @@ class MotorModel extends Equatable {
   // Computed properties
   bool get isAvailable => status == MotorStatus.tersedia;
   bool get isRented => status == MotorStatus.disewa;
-  bool get isUnderMaintenance => status == MotorStatus.maintenance;
+  bool get isConfirmed => status == MotorStatus.menungguKonfirmasi;
 
   String get formattedPrice =>
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0)
@@ -153,7 +146,6 @@ class MotorModel extends Equatable {
         hargaSewa,
         status,
         gambarUrl,
-        deskripsi,
         createdAt,
         updatedAt,
       ];

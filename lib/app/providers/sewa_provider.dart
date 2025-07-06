@@ -41,8 +41,18 @@ class SewaProvider with ChangeNotifier {
     notifyListeners();
     _adminSewaSubscription?.cancel();
     _adminSewaSubscription = _firestoreService.getAllSewa().listen(
-      (sewa) {
-        _adminSewaList = sewa;
+      (sewaList) async {
+        // 🔴 Tambahkan populate user dan motor
+        final populatedList = await Future.wait(
+          sewaList.map((sewa) async {
+            final motor = await _firestoreService.getMotorById(sewa.motorId);
+            final user = await _firestoreService.getUserById(sewa.userId);
+
+            return sewa.copyWith(detailMotor: motor, detailUser: user);
+          }),
+        );
+
+        _adminSewaList = populatedList;
         _isLoading = false;
         notifyListeners();
       },
@@ -55,24 +65,49 @@ class SewaProvider with ChangeNotifier {
   }
 
   // Mengambil data sewa untuk user yang sedang login
-  void fetchSewaForCurrentUser(String userId) {
-    _isLoading = true;
-    notifyListeners();
-    _userSewaSubscription?.cancel();
-    _userSewaSubscription = _firestoreService
-        .getSewaByUserId(userId)
-        .listen(
-          (sewa) {
-            _userSewaList = sewa;
-            _isLoading = false;
-            notifyListeners();
-          },
-          onError: (e) {
-            _errorMessage = e.toString();
-            _isLoading = false;
-            notifyListeners();
-          },
+  Future<void> fetchSewaForCurrentUser(String userId) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+      print('Fetching sewa for user $userId');
+
+      final sewaStream = _firestoreService.getSewaByUserId(userId);
+
+      _userSewaSubscription?.cancel();
+      _userSewaSubscription = sewaStream.listen((sewaList) async {
+        print('Sewa stream returned: ${sewaList.length} items');
+
+        if (sewaList.isEmpty) {
+          _userSewaList = [];
+          _isLoading = false;
+          notifyListeners();
+          return;
+        }
+
+        final populatedList = await Future.wait(
+          sewaList.map((sewa) async {
+            try {
+              final motor = await _firestoreService.getMotorById(sewa.motorId);
+              print('Fetched motor ${motor?.nama} for sewa ${sewa.id}');
+              return sewa.copyWith(detailMotor: motor);
+            } catch (e) {
+              print('Error fetching motor for sewa ${sewa.id}: $e');
+              return sewa;
+            }
+          }),
         );
+
+        _userSewaList = populatedList;
+        _isLoading = false;
+        notifyListeners();
+        print('Finished populating sewa list');
+      });
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      print('Error fetchSewaForCurrentUser: $e');
+    }
   }
 
   // --- FUNGSI BARU UNTUK MENGAMBIL JADWAL YANG SUDAH DIPESAN ---
@@ -106,6 +141,15 @@ class SewaProvider with ChangeNotifier {
     _userSewaSubscription?.cancel();
   }
 
+  int hitungKeterlambatan(DateTime dueDate, DateTime actualReturnDate) {
+    final diff = actualReturnDate.difference(dueDate).inDays;
+    return diff > 0 ? diff : 0;
+  }
+
+  int hitungTotalDenda(int keterlambatan, int dendaPerHari) {
+    return keterlambatan * dendaPerHari;
+  }
+
   Future<bool> createSewa({
     required UserModel user,
     required MotorModel motor,
@@ -133,7 +177,13 @@ class SewaProvider with ChangeNotifier {
       );
 
       await _firestoreService.addSewa(sewaBaru);
-      await _firestoreService.updateMotorStatus(motor.id, MotorStatus.disewa);
+
+      // 🛑 Jangan ubah status motor menjadi disewa langsung di sini.
+      // ✅ Ubah menjadi menungguKonfirmasi.
+      await _firestoreService.updateMotorStatus(
+        motor.id,
+        MotorStatus.menungguKonfirmasi,
+      );
 
       return true;
     } catch (e) {
@@ -154,16 +204,23 @@ class SewaProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      if (isKonfirmasi) {
-        await _firestoreService.updateSewaStatus(sewaId, 'Dikonfirmasi');
-        await _firestoreService.updateMotorStatus(motorId, MotorStatus.disewa);
-      } else {
-        await _firestoreService.updateSewaStatus(sewaId, 'Ditolak');
-        await _firestoreService.updateMotorStatus(
-          motorId,
-          MotorStatus.tersedia,
-        );
+      // Cari sewa terkait dari _adminSewaList
+      final sewa = _adminSewaList.firstWhere((s) => s.id == sewaId);
+
+      // Ambil playerId dari detailUser
+      final userPlayerId = sewa.detailUser?.playerId;
+
+      if (userPlayerId == null) {
+        throw Exception('Player ID user tidak ditemukan.');
       }
+
+      await _firestoreService.updateSewaStatusAndMotor(
+        sewaId,
+        motorId,
+        isKonfirmasi ? 'Dikonfirmasi' : 'Ditolak',
+        isKonfirmasi ? 'disewa' : 'tersedia',
+        userPlayerId, // ⬅️ tambahkan di sini
+      );
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -174,12 +231,46 @@ class SewaProvider with ChangeNotifier {
     }
   }
 
-  Future<void> selesaikanSewa(String sewaId, String motorId) async {
+  Future<void> selesaikanSewa(
+    String sewaId,
+    String motorId, {
+    DateTime? tanggalPengembalianAktual,
+    int? totalDenda,
+  }) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      await _firestoreService.updateSewaStatus(sewaId, 'Selesai');
+      final now = DateTime.now();
+      final tanggalPengembalian = tanggalPengembalianAktual ?? now;
+
+      final sewa = _adminSewaList.firstWhere((s) => s.id == sewaId);
+
+      // Ambil playerId dari detailUser
+      final userPlayerId = sewa.detailUser?.playerId;
+
+      if (userPlayerId == null) {
+        throw Exception('Player ID user tidak ditemukan.');
+      }
+
+      final keterlambatan = hitungKeterlambatan(
+        sewa.tanggalKembali,
+        tanggalPengembalian,
+      );
+      final dendaPerHari = 20000;
+
+      final totalDendaFinal =
+          totalDenda ?? hitungTotalDenda(keterlambatan, dendaPerHari);
+
+      await _firestoreService.updateSewaOnComplete(
+        sewaId: sewaId,
+        motorId: motorId,
+        tanggalPengembalianAktual: tanggalPengembalian,
+        status: 'Selesai',
+        totalDenda: totalDendaFinal,
+        userPlayerId: userPlayerId, // ⬅️ tambahkan ini
+      );
+
       await _firestoreService.updateMotorStatus(motorId, MotorStatus.tersedia);
     } catch (e) {
       _errorMessage = e.toString();

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rentalin/app/ui/screens/panduan_admin_screen.dart';
+import 'package:rentalin/app/ui/screens/panduan_user_screen.dart';
 import 'package:rentalin/utils/auth_exception.dart';
 import '../../../providers/auth_provider.dart';
 import 'register_screen.dart';
@@ -14,12 +16,17 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  // 🔶 Tambahkan FocusNode untuk password
+  final _passwordFocus = FocusNode();
+
   bool _isPasswordVisible = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordFocus.dispose(); // dispose focus
     super.dispose();
   }
 
@@ -34,19 +41,29 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-    } catch (e) {
-      final message = e is AuthException
-          ? e.message
-          : 'Terjadi kesalahan. Coba lagi.';
+      if (!mounted) return;
+
+      // Navigasi ke halaman utama setelah login sukses jika diperlukan
+      // Contoh:
+      // Navigator.of(context).pushReplacement(...);
+    } on AuthException catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
+        SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Login error: $e\n$stackTrace');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Terjadi kesalahan. Coba lagi.'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // ... UI (Tidak ada perubahan)
     return Scaffold(
       body: SafeArea(
         child: Consumer<AuthProvider>(
@@ -60,17 +77,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(
-                        Icons.two_wheeler,
-                        size: 80,
-                        color: Colors.blueAccent,
-                      ),
+                      Image.asset('assets/icon/icon.png', width: 200, height: 200),
                       const SizedBox(height: 16),
                       const Text(
-                        'Selamat Datang di Rental-in',
+                        'Selamat Datang di Boss Sewa Motor',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -84,16 +97,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) {
+                          FocusScope.of(context).requestFocus(_passwordFocus);
+                        },
                         decoration: const InputDecoration(
                           labelText: 'Email',
                           prefixIcon: Icon(Icons.email_outlined),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Password tidak boleh kosong';
+                            return 'Email tidak boleh kosong';
                           }
-                          if (value.length < 6) {
-                            return 'Password minimal 6 karakter';
+                          if (!value.contains('@')) {
+                            return 'Masukkan email yang valid';
                           }
                           return null;
                         },
@@ -101,8 +118,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _passwordController,
+                        focusNode: _passwordFocus, // 🔶 tambahkan focusNode
                         obscureText: !_isPasswordVisible,
                         keyboardType: TextInputType.visiblePassword,
+                        textInputAction: TextInputAction.done,
                         onFieldSubmitted: (_) => _login(),
                         decoration: InputDecoration(
                           labelText: 'Password',
@@ -119,8 +138,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty)
+                          if (value == null || value.isEmpty) {
                             return 'Password tidak boleh kosong';
+                          }
                           return null;
                         },
                       ),
@@ -128,8 +148,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ElevatedButton(
                         onPressed: auth.isLoading ? null : _login,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         child: auth.isLoading
@@ -160,6 +178,59 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: const Text(
                               'Daftar di sini',
                               style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(height: 32, color: Colors.grey),
+                      const Text(
+                        'Panduan Aplikasi',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => PanduanUserScreen(),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.info_outline),
+                            label: const Text(
+                              'Panduan Pengguna',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => PanduanAdminScreen(),
+                                ),
+                              );
+                            },
+                            icon: const Icon(
+                              Icons.admin_panel_settings_outlined,
+                            ),
+                            label: const Text(
+                              'Panduan Admin',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],

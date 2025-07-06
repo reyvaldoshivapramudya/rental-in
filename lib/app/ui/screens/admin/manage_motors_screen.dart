@@ -8,6 +8,8 @@ class ManageMotorsScreen extends StatelessWidget {
   const ManageMotorsScreen({super.key});
 
   void _showDeleteConfirmation(BuildContext context, MotorModel motor) {
+    final rootContext = context; // simpan context halaman
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -23,23 +25,27 @@ class ManageMotorsScreen extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () async {
-              Navigator.of(ctx).pop(); // Tutup dialog terlebih dulu
+              Navigator.of(ctx).pop(); // tutup dialog terlebih dulu
 
               final motorProvider = Provider.of<MotorProvider>(
-                context,
+                rootContext,
                 listen: false,
               );
 
               await motorProvider.deleteMotor(motor.id);
-              await motorProvider.refreshMotors(); // Tambahkan refresh disini
+              await motorProvider.refreshMotors();
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Motor "${motor.nama}" berhasil dihapus.'),
-                  backgroundColor: Colors.green,
-                ),
-              );
+              // Cek jika widget masih mounted
+              if (rootContext.mounted) {
+                ScaffoldMessenger.of(rootContext).showSnackBar(
+                  SnackBar(
+                    content: Text('Motor "${motor.nama}" berhasil dihapus.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
             },
+
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Hapus'),
           ),
@@ -51,11 +57,7 @@ class ManageMotorsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kelola Motor'),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text('Kelola Motor')),
       backgroundColor: Colors.grey[100],
       body: Consumer<MotorProvider>(
         builder: (context, motorProvider, child) {
@@ -103,8 +105,6 @@ class ManageMotorsScreen extends StatelessWidget {
             Provider.of<MotorProvider>(context, listen: false).refreshMotors();
           }
         },
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
         tooltip: 'Tambah Motor Baru',
         child: const Icon(Icons.add),
       ),
@@ -128,7 +128,7 @@ class MotorManagementCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 4,
-      shadowColor: Colors.black.withOpacity(0.1),
+      shadowColor: Colors.black.withValues(alpha: 0.1),
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -183,8 +183,7 @@ class MotorManagementCard extends StatelessWidget {
                         'Rp ${motor.hargaSewa} / hari',
                         style: const TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blueAccent,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -204,10 +203,7 @@ class MotorManagementCard extends StatelessWidget {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(
-                        Icons.edit_outlined,
-                        color: Colors.blueAccent,
-                      ),
+                      icon: const Icon(Icons.edit_outlined),
                       onPressed: onEdit,
                       tooltip: 'Edit',
                     ),

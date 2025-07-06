@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rentalin/app/config/theme.dart';
 import 'package:rentalin/app/data/models/user_model.dart';
 import 'package:rentalin/app/providers/auth_provider.dart';
+import 'package:rentalin/app/providers/sewa_provider.dart';
+import 'package:rentalin/app/ui/screens/main_screen_wrapper.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -13,14 +16,7 @@ class ProfileScreen extends StatelessWidget {
     final UserModel? user = authProvider.user;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profil Saya'),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
-      ),
-      // 2. Gunakan FutureBuilder jika data user mungkin dimuat secara async
-      // atau langsung tampilkan jika sudah pasti tersedia saat navigasi.
-      // Di sini kita asumsikan data sudah ada di AuthProvider.
+      appBar: AppBar(title: const Text('Profil Saya')),
       body: user == null
           ? const Center(
               child: Column(
@@ -47,8 +43,8 @@ class ProfileScreen extends StatelessWidget {
             children: [
               const CircleAvatar(
                 radius: 50,
-                backgroundColor: Colors.blueAccent,
-                child: Icon(Icons.person, size: 60, color: Colors.white),
+                backgroundColor: AppTheme.primaryColor,
+                child: Icon(Icons.person, size: 60),
               ),
               const SizedBox(height: 16),
               Text(
@@ -75,11 +71,7 @@ class ProfileScreen extends StatelessWidget {
         // Detail Informasi Pengguna dalam bentuk daftar
         const Text(
           'Informasi Akun',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.blueAccent,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Card(
@@ -95,7 +87,12 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Nomor Telepon',
                 value: user.nomorTelepon,
               ),
-              const Divider(height: 1, indent: 16, endIndent: 16),
+              const Divider(
+                height: 1,
+                indent: 16,
+                endIndent: 16,
+                color: Colors.grey,
+              ),
               // 6. Tampilkan Alamat Lengkap
               ProfileInfoTile(
                 icon: Icons.location_on,
@@ -105,6 +102,67 @@ class ProfileScreen extends StatelessWidget {
                     true, // Beri flag untuk alamat yang mungkin panjang
               ),
             ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // 🔥 OutlinedButton Logout
+        OutlinedButton.icon(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Konfirmasi Logout'),
+                content: const Text('Apakah Anda yakin ingin keluar?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text(
+                      'Batal',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                  FilledButton(
+                    onPressed: () async {
+                      Navigator.of(ctx).pop(); // Tutup dialog terlebih dahulu
+
+                      final authProvider = Provider.of<AuthProvider>(
+                        context,
+                        listen: false,
+                      );
+                      final sewaProvider = Provider.of<SewaProvider>(
+                        context,
+                        listen: false,
+                      );
+
+                      sewaProvider.clearUserSewaData();
+                      await authProvider.logout();
+
+                      // Navigasi ke LoginScreen dan hapus semua route sebelumnya
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (context) => const MainScreenWrapper(),
+                        ),
+                        (route) => false,
+                      );
+                    },
+                    child: const Text(
+                      'Logout',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          icon: const Icon(Icons.logout, color: Colors.red),
+          label: const Text('Keluar', style: TextStyle(color: Colors.red)),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Colors.red),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 12),
           ),
         ),
       ],
@@ -130,7 +188,7 @@ class ProfileInfoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: Colors.blueAccent),
+      leading: Icon(icon, color: AppTheme.primaryColor),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(
         value.isNotEmpty ? value : 'Belum diisi',

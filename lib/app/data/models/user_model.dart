@@ -9,6 +9,7 @@ class UserModel extends Equatable {
   final UserRole role;
   final String nomorTelepon;
   final String alamat;
+  final String? playerId; // ⬅️ tambahkan field ini
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -19,6 +20,7 @@ class UserModel extends Equatable {
     required this.role,
     required this.nomorTelepon,
     required this.alamat,
+    this.playerId, // ⬅️ tambahkan di konstruktor
     this.createdAt,
     this.updatedAt,
   });
@@ -35,6 +37,7 @@ class UserModel extends Equatable {
         role: UserRole.fromString(data['role']?.toString() ?? 'user'),
         nomorTelepon: data['nomorTelepon']?.toString().trim() ?? '',
         alamat: data['alamat']?.toString().trim() ?? '',
+        playerId: data['playerId']?.toString(), // ⬅️ mapping Firestore
         createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
         updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
       );
@@ -51,33 +54,37 @@ class UserModel extends Equatable {
       'role': role.value,
       'nomorTelepon': nomorTelepon.trim(),
       'alamat': alamat.trim(),
-      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'playerId': playerId, // ⬅️ mapping Firestore
+      'createdAt': createdAt != null
+          ? Timestamp.fromDate(createdAt!)
+          : FieldValue.serverTimestamp(),
       'updatedAt': Timestamp.fromDate(now),
     };
   }
 
-  // Optional JSON support
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
-        uid: json['uid'],
-        nama: json['nama'],
-        email: json['email'],
-        role: UserRole.fromString(json['role']),
-        nomorTelepon: json['nomorTelepon'],
-        alamat: json['alamat'],
-        createdAt: DateTime.tryParse(json['createdAt'] ?? ''),
-        updatedAt: DateTime.tryParse(json['updatedAt'] ?? ''),
-      );
+    uid: json['uid'],
+    nama: json['nama'],
+    email: json['email'],
+    role: UserRole.fromString(json['role']),
+    nomorTelepon: json['nomorTelepon'],
+    alamat: json['alamat'],
+    playerId: json['playerId'], // ⬅️ mapping JSON
+    createdAt: DateTime.tryParse(json['createdAt'] ?? ''),
+    updatedAt: DateTime.tryParse(json['updatedAt'] ?? ''),
+  );
 
   Map<String, dynamic> toJson() => {
-        'uid': uid,
-        'nama': nama,
-        'email': email,
-        'role': role.value,
-        'nomorTelepon': nomorTelepon,
-        'alamat': alamat,
-        'createdAt': createdAt?.toIso8601String(),
-        'updatedAt': updatedAt?.toIso8601String(),
-      };
+    'uid': uid,
+    'nama': nama,
+    'email': email,
+    'role': role.value,
+    'nomorTelepon': nomorTelepon,
+    'alamat': alamat,
+    'playerId': playerId, // ⬅️ mapping JSON
+    'createdAt': createdAt?.toIso8601String(),
+    'updatedAt': updatedAt?.toIso8601String(),
+  };
 
   UserModel copyWith({
     String? uid,
@@ -86,6 +93,7 @@ class UserModel extends Equatable {
     UserRole? role,
     String? nomorTelepon,
     String? alamat,
+    String? playerId, // ⬅️ tambah di copyWith
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -96,16 +104,29 @@ class UserModel extends Equatable {
       role: role ?? this.role,
       nomorTelepon: nomorTelepon ?? this.nomorTelepon,
       alamat: alamat ?? this.alamat,
+      playerId: playerId ?? this.playerId, // ⬅️ assign copyWith
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
-  bool get isValidEmail => RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
-  bool get isValidPhone => RegExp(r'^\+?[\d\s\-\(\)]{10,}$').hasMatch(nomorTelepon);
+  bool get isValidEmail =>
+      RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+  bool get isValidPhone =>
+      RegExp(r'^\+?[\d\s\-\(\)]{10,}$').hasMatch(nomorTelepon);
   bool get isAdmin => role == UserRole.admin;
   bool get isUser => role == UserRole.user;
 
   @override
-  List<Object?> get props => [uid, nama, email, role, nomorTelepon, alamat, createdAt, updatedAt];
+  List<Object?> get props => [
+    uid,
+    nama,
+    email,
+    role,
+    nomorTelepon,
+    alamat,
+    playerId, // ⬅️ tambahkan di props Equatable
+    createdAt,
+    updatedAt,
+  ];
 }

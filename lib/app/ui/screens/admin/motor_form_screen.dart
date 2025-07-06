@@ -136,8 +136,6 @@ class _MotorFormScreenState extends State<MotorFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditMode ? 'Edit Data Motor' : 'Tambah Motor Baru'),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
       ),
       backgroundColor: Colors.grey[100],
       body: Form(
@@ -172,8 +170,8 @@ class _MotorFormScreenState extends State<MotorFormScreen> {
               color: Colors.transparent,
               child: InkWell(
                 onTap: _pickImage,
-                splashColor: Colors.black.withOpacity(0.3),
-                highlightColor: Colors.white.withOpacity(0.15),
+                splashColor: Colors.black.withValues(alpha: 0.3),
+                highlightColor: Colors.white.withValues(alpha: 0.15),
               ),
             ),
           ),
@@ -243,7 +241,7 @@ class _MotorFormScreenState extends State<MotorFormScreen> {
         SizedBox(height: 200, width: double.infinity, child: imageWidget),
         Positioned.fill(
           child: Container(
-            decoration: BoxDecoration(color: Colors.black.withOpacity(0.4)),
+            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4)),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
@@ -346,7 +344,9 @@ class _MotorFormScreenState extends State<MotorFormScreen> {
     return SizedBox(
       width: double.infinity,
       child: FilledButton.icon(
-        icon: _isLoading ? Container() : const Icon(Icons.save),
+        icon: _isLoading
+            ? Container()
+            : const Icon(Icons.save, color: Colors.black),
         label: _isLoading
             ? const SizedBox(
                 height: 20,
@@ -358,12 +358,11 @@ class _MotorFormScreenState extends State<MotorFormScreen> {
               )
             : Text(
                 isEditMode ? 'Simpan Perubahan' : 'Tambahkan Motor',
-                style: const TextStyle(fontSize: 16),
+                style: const TextStyle(fontSize: 16, color: Colors.black),
               ),
         onPressed: _isLoading ? null : _simpanMotor,
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          backgroundColor: Colors.blueAccent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -403,6 +402,7 @@ class CustomTextFormField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
+        labelStyle: TextStyle(color: Colors.black),
         prefixIcon: Icon(prefixIcon),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
