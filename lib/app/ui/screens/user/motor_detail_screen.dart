@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rentalin/app/config/theme.dart';
+import 'package:rentalin/app/data/models/motor_model.dart';
 import 'package:rentalin/app/data/models/motor_status.dart';
 import 'package:rentalin/app/data/models/sewa_model.dart';
 import 'package:rentalin/app/data/models/status_pemesanan.dart';
-import '../../../data/models/motor_model.dart';
-import '../../../providers/motor_provider.dart';
-import '../../../providers/sewa_provider.dart';
-import 'booking_form_screen.dart';
+import 'package:rentalin/app/providers/motor_provider.dart';
+import 'package:rentalin/app/providers/sewa_provider.dart';
+import 'package:rentalin/app/ui/screens/user/booking_form_screen.dart';
 
 class MotorDetailScreen extends StatelessWidget {
   final String motorId;
@@ -16,78 +16,77 @@ class MotorDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sewaProvider = Provider.of<SewaProvider>(context, listen: false);
+    // Dapatkan instance provider di awal untuk memanggil stream
+    final motorProvider = context.read<MotorProvider>();
+    final sewaProvider = context.read<SewaProvider>();
 
-    return Consumer<MotorProvider>(
-      builder: (context, motorProvider, child) {
-        if (motorProvider.isLoading) {
+    // ⭐️ STREAMBUILDER LUAR: Mendengarkan status motor global (tersedia/disewa)
+    return StreamBuilder<MotorModel>(
+      stream: motorProvider.getMotorStream(motorId),
+      builder: (context, motorSnapshot) {
+        // Handle loading dan error untuk data motor utama
+        if (motorSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
-
-        MotorModel? motor = motorProvider.motors.firstWhere(
-          (m) => m.id == motorId,
-          orElse: () => MotorModel(
-            id: '',
-            nama: 'Motor tidak ditemukan',
-            merek: '',
-            tahun: 0,
-            nomorPolisi: '',
-            hargaSewa: 0,
-            status: MotorStatus.tidakTersedia,
-            gambarUrl: '',
-          ),
-        );
-
-        // Jika motor tidak ditemukan
-        if (motor.id.isEmpty) {
+        if (motorSnapshot.hasError) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Motor tidak ditemukan')),
-            body: const Center(
-              child: Text(
-                'Motor yang kamu cari tidak tersedia.',
-                style: TextStyle(fontSize: 16),
-              ),
-            ),
+            body: Center(child: Text('Error: ${motorSnapshot.error}')),
+          );
+        }
+        if (!motorSnapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: Text('Motor tidak ditemukan.')),
           );
         }
 
-        // Replace http with https if needed
-        String imageUrl = motor.gambarUrl;
-        if (imageUrl.startsWith('http://')) {
-          imageUrl = imageUrl.replaceFirst('http://', 'https://');
-        }
+        // Jika data motor ada, kita dapatkan object-nya
+        final motor = motorSnapshot.data!;
 
-        return FutureBuilder<SewaModel?>(
-          future: sewaProvider.checkUserPendingBooking(motorId),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-
-            // MODIFIKASI: Tentukan status UI berdasarkan hasil snapshot
-            final SewaModel? userPendingBooking = snapshot.data;
+        // ⭐️ STREAMBUILDER DALAM: Mendengarkan status booking personal user
+        return StreamBuilder<SewaModel?>(
+          stream: sewaProvider.getPendingBookingStream(motorId),
+          builder: (context, bookingSnapshot) {
+            // Kita tidak perlu state loading di sini, karena tampilan utama sudah di-handle oleh stream luar.
+            // Kita bisa langsung menggunakan datanya, meskipun masih dalam proses koneksi awal.
+            final SewaModel? userPendingBooking = bookingSnapshot.data;
             final bool isUserWaitingForConfirmation =
                 userPendingBooking != null;
 
-            // Logika baru untuk mengaktifkan/menonaktifkan tombol sewa
+            // --- LOGIKA TAMPILAN (KINI REAL-TIME) ---
+
+            final bool isMotorGloballyAvailable =
+                motor.status == MotorStatus.tersedia;
             final bool isSewaEnabled =
-                motor.status == MotorStatus.tersedia &&
-                !isUserWaitingForConfirmation;
+                isMotorGloballyAvailable && !isUserWaitingForConfirmation;
 
-            // Logika baru untuk teks dan warna status
-            final String statusText = isUserWaitingForConfirmation
-                ? StatusPemesanan.menungguKonfirmasi.displayName
-                : motor.status.displayName;
+            final String statusText;
+            final Color statusColor;
 
-            final Color statusColor = isUserWaitingForConfirmation
-                ? StatusPemesanan.menungguKonfirmasi.statusColor
-                : (motor.status == MotorStatus.tersedia
-                      ? Colors.green
-                      : Colors.orange);
+            // Prioritas 1: Jika user ini sedang menunggu konfirmasi, tampilkan itu.
+            if (isUserWaitingForConfirmation) {
+              statusText = StatusPemesanan.menungguKonfirmasi.displayName;
+              statusColor = StatusPemesanan.menungguKonfirmasi.statusColor;
+            } else {
+              // Jika tidak, tampilkan status global dari motor.
+              statusText = motor.status.displayName;
+              statusColor = motor
+                  .status
+                  .statusColor; // Asumsi ada extension `statusColor`
+            }
+
+            final String buttonText;
+            if (isUserWaitingForConfirmation) {
+              buttonText = 'Menunggu Konfirmasi';
+            } else if (!isMotorGloballyAvailable) {
+              buttonText =
+                  motor.status.displayName; // Akan menampilkan "Disewa"
+            } else {
+              buttonText = 'Sewa Sekarang';
+            }
+
+            // --- TAMPILAN UI (SCAFFOLD) ---
 
             return Scaffold(
               appBar: AppBar(title: Text(motor.nama)),
@@ -95,45 +94,22 @@ class MotorDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    imageUrl.isNotEmpty
-                        ? Image.network(
-                            imageUrl,
-                            height: 250,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              height: 250,
-                              color: Colors.grey[200],
-                              child: const Icon(
-                                Icons.two_wheeler,
-                                size: 80,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            loadingBuilder: (context, child, progress) {
-                              if (progress == null) return child;
-                              return Container(
-                                height: 250,
-                                color: Colors.grey[200],
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    value: progress.expectedTotalBytes != null
-                                        ? progress.cumulativeBytesLoaded /
-                                              progress.expectedTotalBytes!
-                                        : null,
-                                  ),
-                                ),
-                              );
-                            },
-                          )
-                        : Container(
-                            height: 250,
-                            color: Colors.grey[200],
-                            child: const Icon(
-                              Icons.two_wheeler,
-                              size: 80,
-                              color: Colors.grey,
-                            ),
-                          ),
+                    Image.network(
+                      motor.gambarUrl.isNotEmpty
+                          ? motor.gambarUrl
+                          : 'https://via.placeholder.com/400x250?text=Gambar+Motor',
+                      height: 250,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        height: 250,
+                        color: Colors.grey[200],
+                        child: const Icon(
+                          Icons.two_wheeler,
+                          size: 80,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
@@ -204,22 +180,11 @@ class MotorDetailScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16.0),
                 child: ElevatedButton(
                   onPressed: isSewaEnabled
-                      ? () async {
-                          final bookingResult = await Navigator.of(context)
-                              .push(
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      BookingFormScreen(motor: motor),
-                                ),
-                              );
-
-                          if (bookingResult == true && context.mounted) {
-                            Provider.of<MotorProvider>(
-                              context,
-                              listen: false,
-                            ).refreshMotors();
-                          }
-                        }
+                      ? () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => BookingFormScreen(motor: motor),
+                          ),
+                        )
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isSewaEnabled
@@ -232,12 +197,7 @@ class MotorDetailScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    // isSewaEnabled ? 'Sewa Sekarang' : 'Sudah Dibooking',
-                    isUserWaitingForConfirmation
-                        ? 'Menunggu Konfirmasi'
-                        : (motor.status == MotorStatus.tersedia
-                              ? 'Sewa Sekarang'
-                              : motor.status.displayName),
+                    buttonText,
                     style: TextStyle(
                       fontSize: 18,
                       color: isSewaEnabled ? Colors.black : Colors.white,

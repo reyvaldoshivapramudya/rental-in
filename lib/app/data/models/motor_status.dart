@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart'; // ✨ TAMBAHKAN IMPORT INI
+
 enum MotorStatus {
   tersedia('tersedia'),
   tidakTersedia('tidak tersedia'),
@@ -38,6 +40,20 @@ enum MotorStatus {
         return 'Disewa';
       case MotorStatus.menungguKonfirmasi:
         return 'Menunggu Konfirmasi';
+    }
+  }
+
+  // ✨ TAMBAHKAN GETTER BARU DI BAWAH INI ✨
+  Color get statusColor {
+    switch (this) {
+      case MotorStatus.tersedia:
+        return Colors.green;
+      case MotorStatus.disewa:
+        return Colors.orange;
+      case MotorStatus.menungguKonfirmasi:
+        return Colors.blue;
+      case MotorStatus.tidakTersedia:
+        return Colors.grey;
     }
   }
 }

@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../data/models/motor_model.dart';
 import '../data/services/firestore_service.dart';
 
 class MotorProvider with ChangeNotifier {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirestoreService _firestoreService = FirestoreService();
   List<MotorModel> _motors = [];
   StreamSubscription? _motorsSubscription;
@@ -18,6 +20,16 @@ class MotorProvider with ChangeNotifier {
 
   MotorProvider() {
     fetchMotors();
+  }
+
+  Stream<MotorModel> getMotorStream(String motorId) {
+    // Pastikan Anda memiliki akses ke instance Firestore di sini,
+    // mungkin bernama _db atau _firestore.
+    return _firestore
+        .collection('motors')
+        .doc(motorId)
+        .snapshots() // Menggunakan .snapshots() untuk real-time
+        .map((doc) => MotorModel.fromFirestore(doc));
   }
 
   void fetchMotors() {
@@ -48,6 +60,7 @@ class MotorProvider with ChangeNotifier {
     fetchMotors();
     notifyListeners();
   }
+  
 
   Future<String> addMotor(MotorModel motorData, File imageFile) async {
     try {

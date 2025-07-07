@@ -160,6 +160,36 @@ class SewaProvider with ChangeNotifier {
     }
   }
 
+  /// Mendapatkan stream real-time untuk booking yang sedang menunggu konfirmasi
+  /// dari user saat ini untuk motor tertentu.
+  Stream<SewaModel?> getPendingBookingStream(String motorId) {
+    final userId = _authProvider.user?.uid;
+    if (userId == null) {
+      // Kembalikan stream yang tidak pernah menghasilkan data jika user tidak login.
+      // `Stream.value(null)` memastikan StreamBuilder langsung mendapat nilai null.
+      return Stream.value(null);
+    }
+
+    return _firestore
+        .collection('sewa')
+        .where('motorId', isEqualTo: motorId)
+        .where('userId', isEqualTo: userId)
+        .where(
+          'statusPemesanan',
+          isEqualTo: StatusPemesanan.menungguKonfirmasi.value,
+        )
+        .limit(1)
+        .snapshots() // Menggunakan .snapshots() untuk real-time
+        .map((snapshot) {
+          if (snapshot.docs.isNotEmpty) {
+            // Jika dokumen ditemukan, kembalikan data bookingnya
+            return SewaModel.fromFirestore(snapshot.docs.first);
+          }
+          // Jika tidak ada dokumen, kembalikan null
+          return null;
+        });
+  }
+
   // --- FUNGSI BARU UNTUK MEMBERSIHKAN STATE ---
   // Penting untuk dipanggil saat keluar dari halaman booking
   void clearBookedDates() {
