@@ -30,7 +30,7 @@ class TentangScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               const Text(
-                'Dengan berbagai pilihan motor yang terawat mulai dari motor matic hingga motor bebek. Boss Sewa Motor menawarkan pengalaman berkendara yang aman, nyaman, dan fleksibel. Lokasinya yang strategis di pusat kota Purwokerto membuatnya mudah dijangkau dari stasiun dan terminal. Selain itu, tim yang ramah dan berpengalaman juga siap memberikan panduan rute serta informasi destinasi terbaik di sekitar Purwokerto seperti Baturaden, Curug Cipendok, dan Kebun Teh Tambi. Boss Sewa Motor Purwokerto berkomitmen untuk menjadi mitra perjalanan terbaik bagi wisatawan asing yang ingin menjelajah Purwokerto dengan kebebasan dan kenyamanan maksimal.',
+                'Dengan berbagai pilihan motor matic yang terawat dengan baik. Boss Sewa Motor menawarkan pengalaman berkendara yang aman, nyaman, dan fleksibel. Lokasinya yang strategis di pusat kota Purwokerto membuatnya mudah dijangkau dari stasiun dan terminal. Selain itu, tim yang ramah dan berpengalaman juga siap memberikan panduan rute serta informasi destinasi terbaik di sekitar Purwokerto seperti Baturaden, Curug Cipendok, dan Kebun Teh Tambi. Boss Sewa Motor Purwokerto berkomitmen untuk menjadi mitra perjalanan terbaik bagi wisatawan asing yang ingin menjelajah Purwokerto dengan kebebasan dan kenyamanan maksimal.',
                 style: TextStyle(fontSize: 16),
                 textAlign: TextAlign.justify,
               ),
