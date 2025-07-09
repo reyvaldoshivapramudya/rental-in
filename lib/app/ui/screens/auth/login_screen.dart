@@ -207,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                             icon: const Icon(Icons.info_outline),
                             label: const Text(
-                              'Panduan Pengguna',
+                              'Panduan Penyewa',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,

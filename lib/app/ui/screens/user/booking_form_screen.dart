@@ -167,7 +167,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
       messenger.showSnackBar(
         const SnackBar(
           content: Text(
-            'Booking berhasil! Silahkan Menunggu Konfirmasi dari admin.',
+            'Penyewaan berhasil! Silahkan Menunggu Konfirmasi dari admin.',
           ),
           backgroundColor: Colors.green,
         ),
@@ -176,7 +176,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     } else {
       messenger.showSnackBar(
         SnackBar(
-          content: Text(sewaProvider.errorMessage ?? 'Booking Gagal'),
+          content: Text(sewaProvider.errorMessage ?? 'Penyewaan Gagal'),
           backgroundColor: Colors.red,
         ),
       );
@@ -188,7 +188,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     final dateFormat = DateFormat('d MMMM yyyy', 'id_ID');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Formulir Booking')),
+      appBar: AppBar(title: const Text('Formulir Penyewaan')),
       body: Consumer<SewaProvider>(
         builder: (context, sewaProvider, child) {
           if (sewaProvider.isCheckingSchedule) {
@@ -281,7 +281,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                       child: CircularProgressIndicator(color: Colors.white),
                     )
                   : const Text(
-                      'Konfirmasi Booking',
+                      'Konfirmasi Sewa',
                       style: TextStyle(fontSize: 18, color: Colors.black),
                     ),
             );

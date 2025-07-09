@@ -74,7 +74,7 @@ class PanduanUserScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Panduan Pengguna')),
+      appBar: AppBar(title: const Text('Panduan Penyewa')),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: guides.length,

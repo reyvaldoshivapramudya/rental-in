@@ -36,7 +36,7 @@ class _ManageBookingsScreenState extends State<ManageBookingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Manajemen Booking')),
+      appBar: AppBar(title: const Text('Manajemen Penyewaan')),
       body: Consumer<SewaProvider>(
         builder: (context, sewaProvider, child) {
           if (sewaProvider.isLoading && sewaProvider.sewaList.isEmpty) {
@@ -113,8 +113,8 @@ class BookingCard extends StatelessWidget {
               if (playerId != null && playerId.isNotEmpty) {
                 await firestoreService.sendNotificationToUser(
                   playerId,
-                  'Booking Ditolak',
-                  'Maaf, booking Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} ditolak, karena tidak sesuai dengan kebijakan perusahaan🙏',
+                  'Penyewaan Ditolak',
+                  'Maaf, penyewaan Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} ditolak, karena tidak sesuai dengan kebijakan perusahaan🙏',
                 );
               }
             },
@@ -132,8 +132,8 @@ class BookingCard extends StatelessWidget {
               if (playerId != null && playerId.isNotEmpty) {
                 await firestoreService.sendNotificationToUser(
                   playerId,
-                  'Booking Dikonfirmasi',
-                  'Booking Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} telah dikonfirmasi. Silakan lakukan pembayaran dan ambil motor sesuai jadwal🛵',
+                  'Penyewaan Dikonfirmasi',
+                  'Penyewaan Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} telah dikonfirmasi. Silakan lakukan pembayaran dan ambil motor sesuai jadwal🛵',
                 );
               }
             },
@@ -234,7 +234,7 @@ class BookingCard extends StatelessWidget {
                   if (playerId != null && playerId.isNotEmpty) {
                     await firestoreService.sendNotificationToUser(
                       playerId,
-                      'Sewa Selesai',
+                      'Penyewaan Selesai',
                       'Terima kasih, sewa Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} telah selesai. Jangan lupa nanti sewa lagi ya!👋',
                     );
                   }
