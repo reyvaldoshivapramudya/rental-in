@@ -90,7 +90,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 DashboardCard(
                   icon: Icons.book_online_outlined,
-                  title: 'Manajemen Booking',
+                  title: 'Manajemen Sewa Motor',
                   subtitle: 'Konfirmasi pesanan',
                   color: Colors.blue,
                   onTap: () async {

@@ -44,16 +44,15 @@ class PanduanAdminScreen extends StatelessWidget {
         ],
       },
       {
-        'title': 'Manajemen Booking Motor',
+        'title': 'Manajemen Sewa Motor',
         'icon': Icons.assignment_turned_in_outlined,
         'color': Colors.green,
         'steps': [
-          'Buka menu Booking atau Riwayat Pesanan pada dashboard admin.',
+          'Buka menu Manajemen Sewa Motor pada dashboard admin.',
           'Lihat daftar pemesanan motor yang masuk dengan status Menunggu Konfirmasi.',
-          'Klik pesanan yang ingin anda kelola untuk melihat detailnya.',
           'Jika data pemesanan sudah sesuai, klik Konfirmasi untuk menyetujui pemesanan.',
           'Jika pemesanan tidak sesuai, klik Tolak dan user akan mendapatkan notifikasi bahwa pemesanan ditolak.',
-          'Jika motor sudah dikembalikan oleh user, klik tombol Selesaikan Sewa untuk mengubah status pemesanan menjadi Selesai dan motor tersedia kembali.',
+          'Jika motor sudah dikembalikan oleh user, klik tombol Selesaikan Sewa untuk mengubah status pemesanan menjadi Selesai dan status motor akan tersedia kembali.',
         ],
       },
       {
@@ -61,7 +60,7 @@ class PanduanAdminScreen extends StatelessWidget {
         'icon': Icons.assignment_return,
         'color': Colors.purple,
         'steps': [
-          'Buka menu Booking atau Riwayat Pesanan pada dashboard admin.',
+          'Buka menu Manajemen Sewa Motor pada dashboard admin.',
           'Pilih pesanan dengan status Dikonfirmasi yang motor-nya sudah dikembalikan user.',
           'Klik tombol Selesaikan Sewa pada detail pesanan.',
           'Isi tanggal pengembalian aktual motor sesuai tanggal motor dikembalikan.',

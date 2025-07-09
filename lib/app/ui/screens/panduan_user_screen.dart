@@ -19,7 +19,7 @@ class PanduanUserScreen extends StatelessWidget {
         ],
       },
       {
-        'title': 'Cara Booking Motor',
+        'title': 'Cara Menyewa Motor',
         'icon': Icons.motorcycle,
         'color': Colors.green,
         'steps': [
@@ -27,7 +27,7 @@ class PanduanUserScreen extends StatelessWidget {
           'Pilih motor yang tersedia sesuai kebutuhan anda',
           'Klik tombol Sewa Sekarang pada halaman detail motor',
           'Isi tanggal sewa dan tanggal kembali sesuai kebutuhan',
-          'Klik Konfirmasi Booking',
+          'Klik Konfirmasi Sewa',
           'Tunggu konfirmasi dari admin melalui aplikasi',
           'Setelah dikonfirmasi, anda dapat melihat status pemesanan pada menu Riwayat berubah menjadi Dikonfirmasi',
           'Anda dapat mengambil motor pada tanggal yang telah disepakati dengan datang ke lokasi rental',
