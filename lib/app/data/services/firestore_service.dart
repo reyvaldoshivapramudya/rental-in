@@ -114,11 +114,11 @@ class FirestoreService {
       if (adminPlayerId != null) {
         await OneSignalService.sendNotification(
           playerId: adminPlayerId,
-          title: "Booking Baru",
+          title: "Ada yang mau sewa motor nih!",
           message:
-              "Ada booking baru nih! dari ${sewa.detailUser?.nama ?? 'user'} yang harus dikonfirmasi🛒",
+              "Ada sewa baru nih! dari ${sewa.detailUser?.nama ?? 'user'} yang harus dikonfirmasi🛒",
         );
-        print('✅ Notifikasi booking baru berhasil dikirim ke admin');
+        print('✅ Notifikasi sewa baru berhasil dikirim ke admin');
       } else {
         print('⚠️ Admin playerId tidak ditemukan. Notifikasi tidak dikirim.');
       }

@@ -58,7 +58,7 @@ class _ManageBookingsScreenState extends State<ManageBookingsScreen> {
                           Icon(Icons.history, size: 80, color: Colors.grey),
                           SizedBox(height: 16),
                           Text(
-                            'Belum ada pesanan masuk.',
+                            'Belum ada penyewaan masuk.',
                             style: TextStyle(fontSize: 16, color: Colors.grey),
                           ),
                         ],

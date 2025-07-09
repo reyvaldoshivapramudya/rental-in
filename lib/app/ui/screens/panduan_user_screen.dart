@@ -36,16 +36,16 @@ class PanduanUserScreen extends StatelessWidget {
           'Setelah selesai menggunakan motor, kembalikan ke lokasi rental sesuai waktu yang telah disepakati',
         ],
         'warningText':
-            'Pesananmu akan ditolak oleh admin jika alamat anda berdomisili di Purwokerto',
+            'Penyewaan akan ditolak oleh admin jika alamat anda berdomisili di Purwokerto',
       },
       {
-        'title': 'Cara Melihat Riwayat Pemesanan',
+        'title': 'Cara Melihat Riwayat Penyewaan',
         'icon': Icons.history,
         'color': Colors.orange,
         'steps': [
           'Masuk ke aplikasi menggunakan akun anda',
           'Klik menu Riwayat pada navigasi bawah',
-          'Anda dapat melihat daftar pemesanan beserta statusnya',
+          'Anda dapat melihat daftar penyewaan beserta statusnya',
         ],
       },
       {
@@ -53,7 +53,7 @@ class PanduanUserScreen extends StatelessWidget {
         'icon': Icons.assignment_returned,
         'color': Colors.purple,
         'steps': [
-          'Pastikan motor dikembalikan sesuai tanggal kembali yang tertera pada detail pemesanan.',
+          'Pastikan motor dikembalikan sesuai tanggal kembali yang tertera pada detail penyewaan.',
           'Bawa motor kembali ke lokasi rental pada tanggal yang telah disepakati.',
           'Jika motor dikembalikan melebihi tanggal kembali, anda akan dikenakan denda per hari keterlambatan sesuai kebijakan rental.',
           'Admin akan memproses pengembalian motor dan menginformasikan jumlah total denda jika ada.',
@@ -160,7 +160,7 @@ class PanduanUserScreen extends StatelessWidget {
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Pesanan akan ditolak oleh admin jika alamat anda berdomisili di Purwokerto',
+                          'Penyewaan akan ditolak oleh admin jika alamat anda berdomisili di Purwokerto',
                           style: TextStyle(color: Colors.red, fontSize: 14),
                         ),
                       ),

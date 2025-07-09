@@ -46,11 +46,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riwayat Pesanan'),
+        title: const Text('Riwayat Penyewaan'),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list),
-            tooltip: 'Filter Pesanan',
+            tooltip: 'Filter Penyewaan',
             onSelected: (value) {
               setState(() {
                 _selectedFilter = value;
@@ -89,7 +89,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   children: const [
                     Icon(Icons.history, size: 64, color: Colors.grey),
                     SizedBox(height: 16),
-                    Text('Anda belum pernah melakukan pesanan.'),
+                    Text('Anda belum pernah melakukan penyewaan.'),
                   ],
                 ),
               ),

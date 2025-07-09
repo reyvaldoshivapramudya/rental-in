@@ -91,7 +91,7 @@ class DashboardScreen extends StatelessWidget {
                 DashboardCard(
                   icon: Icons.book_online_outlined,
                   title: 'Manajemen Sewa Motor',
-                  subtitle: 'Konfirmasi pesanan',
+                  subtitle: 'Konfirmasi Penyewaan',
                   color: Colors.blue,
                   onTap: () async {
                     await Navigator.of(context).push(

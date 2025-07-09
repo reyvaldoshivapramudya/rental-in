@@ -120,7 +120,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Konfirmasi Pesanan'),
+        title: const Text('Konfirmasi Penyewaan'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
