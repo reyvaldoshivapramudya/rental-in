@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rentalin/app/config/theme.dart';
+import 'package:rentalin/app/ui/screens/admin/manage_renters_screen.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/sewa_provider.dart';
 import 'motor_form_screen.dart';
@@ -102,6 +103,17 @@ class DashboardScreen extends StatelessWidget {
                     sewaProvider
                         .fetchAllSewaForAdmin(); // Refresh data setelah kembali
                   },
+                ),
+                DashboardCard(
+                  icon: Icons.people_outline,
+                  title: 'Data Penyewa',
+                  subtitle: 'Kelola semua data penyewa',
+                  color: Colors.purple,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ManageRentersScreen(),
+                    ),
+                  ),
                 ),
               ],
             ),

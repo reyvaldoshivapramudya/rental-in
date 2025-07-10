@@ -19,7 +19,6 @@ class SewaModel extends Equatable {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  // 🔶 FIELD BARU
   final DateTime? tanggalPengembalianAktual;
   final int? totalDenda;
 
@@ -133,6 +132,9 @@ class SewaModel extends Equatable {
       throw Exception('Error parsing SewaModel from Firestore: $e');
     }
   }
+
+  /// Menghitung biaya akhir dengan menjumlahkan total biaya sewa dan denda (jika ada).
+  int get biayaAkhir => totalBiaya + (totalDenda ?? 0);
 
   Map<String, dynamic> toFirestore() {
     final now = DateTime.now();

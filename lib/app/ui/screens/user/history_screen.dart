@@ -192,7 +192,8 @@ class HistoryCard extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
-                      Text('Total: ${currencyFormat.format(sewa.totalBiaya)}'),
+                      // Teks 'Total' kita pindahkan ke bawah agar lebih detail
+                      Text('ID Pesanan: ${sewa.id.substring(0, 6)}...'),
                     ],
                   ),
                 ),
@@ -209,30 +210,43 @@ class HistoryCard extends StatelessWidget {
               ],
             ),
             const Divider(height: 20),
+            // BAGIAN DETAIL TANGGAL
             Text('Disewa dari: ${dateFormat.format(sewa.tanggalSewa)}'),
             Text('Hingga: ${dateFormat.format(sewa.tanggalKembali)}'),
-
-            // 🔶 TAMBAHKAN TANGGAL PENGEMBALIAN AKTUAL JIKA ADA
             if (sewa.tanggalPengembalianAktual != null)
               Padding(
-                padding: const EdgeInsets.only(top: 8.0),
+                padding: const EdgeInsets.only(top: 4.0),
                 child: Text(
                   'Dikembalikan pada: ${dateFormat.format(sewa.tanggalPengembalianAktual!)}',
                   style: const TextStyle(color: Colors.black87),
                 ),
               ),
+            const SizedBox(height: 12),
 
-            // 🔶 TAMBAHKAN DENDA JIKA ADA
-            if (sewa.totalDenda != null && sewa.totalDenda! > 0)
-              Padding(
-                padding: const EdgeInsets.only(top: 4.0),
-                child: Text(
-                  'Denda keterlambatan: ${currencyFormat.format(sewa.totalDenda)}',
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
+            // ✨ BAGIAN RINCIAN BIAYA (YANG DIPERBARUI) ✨
+            // Jika booking sudah selesai dan ada denda, tampilkan rinciannya.
+            if (sewa.statusPemesanan == StatusPemesanan.selesai &&
+                (sewa.totalDenda ?? 0) > 0)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Biaya Sewa: ${currencyFormat.format(sewa.totalBiaya)}'),
+                  Text(
+                    'Denda: ${currencyFormat.format(sewa.totalDenda)}',
+                    style: const TextStyle(color: Colors.red),
                   ),
-                ),
+                  const Divider(thickness: 1, height: 16),
+                  Text(
+                    'Total Pembayaran: ${currencyFormat.format(sewa.biayaAkhir)}', // Gunakan getter baru
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              )
+            else
+              // Jika tidak, tampilkan total biaya sewa seperti biasa.
+              Text(
+                'Total Biaya: ${currencyFormat.format(sewa.totalBiaya)}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
           ],
         ),

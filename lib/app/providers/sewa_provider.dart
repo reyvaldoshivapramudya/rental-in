@@ -357,7 +357,7 @@ class SewaProvider with ChangeNotifier {
         sewa.tanggalKembali,
         tanggalPengembalian,
       );
-      final dendaPerHari = 20000;
+      final dendaPerHari = 200000;
 
       final totalDendaFinal =
           totalDenda ?? hitungTotalDenda(keterlambatan, dendaPerHari);

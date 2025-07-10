@@ -5,6 +5,7 @@ class PanduanAdminScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // GANTI SELURUH ISI VARIABEL 'guides' ANDA DENGAN YANG DI BAWAH INI
     final guides = [
       {
         'title': 'Cara Menambahkan Data Motor',
@@ -49,23 +50,39 @@ class PanduanAdminScreen extends StatelessWidget {
         'color': Colors.green,
         'steps': [
           'Buka menu Manajemen Sewa Motor pada dashboard admin.',
+          'Gunakan kolom pencarian di bagian atas untuk memfilter daftar booking berdasarkan nama penyewa atau nama motor.', // ✨ LANGKAH BARU ✨
           'Lihat daftar pemesanan motor yang masuk dengan status Menunggu Konfirmasi.',
           'Jika data pemesanan sudah sesuai, klik Konfirmasi untuk menyetujui pemesanan.',
           'Jika pemesanan tidak sesuai, klik Tolak dan user akan mendapatkan notifikasi bahwa pemesanan ditolak.',
           'Jika motor sudah dikembalikan oleh user, klik tombol Selesaikan Sewa untuk mengubah status pemesanan menjadi Selesai dan status motor akan tersedia kembali.',
         ],
       },
+      // ✨ PANDUAN BARU ✨
+      {
+        'title': 'Kelola Data Penyewa',
+        'icon': Icons.people_outline,
+        'color': Colors.purple,
+        'steps': [
+          'Buka menu Data Penyewa pada dashboard admin.',
+          'Halaman ini akan menampilkan daftar semua pengguna yang terdaftar sebagai penyewa.',
+          'Gunakan kolom pencarian di bagian atas untuk mencari penyewa berdasarkan nama atau email.',
+          'Klik ikon edit (pensil) di samping nama penyewa untuk mengubah data.',
+          'Pada halaman form, Anda dapat mengubah data seperti nama, email, nomor telepon, atau alamat.',
+          'Setelah selesai, klik tombol "Simpan Perubahan" untuk menyimpan data baru ke sistem.',
+        ],
+      },
       {
         'title': 'Proses Pengembalian Motor dan Denda',
         'icon': Icons.assignment_return,
-        'color': Colors.purple,
+        'color':
+            Colors.teal, // Mengganti warna agar tidak sama dengan sebelumnya
         'steps': [
           'Buka menu Manajemen Sewa Motor pada dashboard admin.',
           'Pilih penyewaan dengan status Dikonfirmasi yang motor-nya sudah dikembalikan user.',
           'Klik tombol Selesaikan Sewa.',
-          'Isi tanggal pengembalian aktual motor sesuai tanggal motor dikembalikan.',
-          'Jika motor dikembalikan melebihi tanggal kembali, sistem akan otomatis menghitung denda sesuai hari keterlambatan.',
-          'Setelah semua data benar, klik Konfirmasi Pengembalian.',
+          'Pilih tanggal pengembalian aktual motor sesuai tanggal motor dikembalikan.',
+          'Sistem akan otomatis menghitung denda jika motor dikembalikan melebihi tanggal kembali yang seharusnya.',
+          'Klik "Yakin" pada dialog konfirmasi.',
           'Status penyewaan akan berubah menjadi Selesai dan motor tersedia kembali untuk disewa.',
           'Total denda akan tercatat pada detail pemesanan untuk laporan dan rekap admin.',
         ],
@@ -75,6 +92,7 @@ class PanduanAdminScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Panduan Admin')),
       body: ListView.builder(
+        // ... (Sisa kode Anda tidak perlu diubah)
         padding: const EdgeInsets.all(16),
         itemCount: guides.length,
         itemBuilder: (context, index) {
@@ -96,7 +114,7 @@ class PanduanAdminScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withValues(alpha: 0.3),
+                  color: Colors.grey.withOpacity(0.2),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),

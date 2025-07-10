@@ -9,53 +9,118 @@ import 'package:rentalin/app/ui/screens/main_screen_wrapper.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  // Method untuk menampilkan dialog edit nama
+  void _showEditNameDialog(BuildContext context, AuthProvider authProvider) {
+    // Controller untuk text field, diisi dengan nama saat ini
+    final TextEditingController nameController = TextEditingController(
+      text: authProvider.user?.nama,
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Ubah Nama'),
+          content: TextField(
+            controller: nameController,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Nama Baru'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                if (nameController.text.trim().isEmpty) return;
+
+                // Panggil fungsi dari provider
+                final success = await authProvider.updateUserName(
+                  nameController.text.trim(),
+                );
+
+                // Tutup dialog jika berhasil
+                if (success && ctx.mounted) {
+                  Navigator.of(ctx).pop();
+                }
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // 1. Akses AuthProvider untuk mendapatkan data pengguna
-    final authProvider = Provider.of<AuthProvider>(context);
-    final UserModel? user = authProvider.user;
-
+    // Gunakan Consumer di sini agar seluruh body rebuild saat ada notifikasi
+    // Ini memastikan nama di header dan di tempat lain ikut terupdate
     return Scaffold(
       appBar: AppBar(title: const Text('Profil Saya')),
-      body: user == null
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Memuat data pengguna...'),
-                ],
-              ),
-            )
-          : buildProfileBody(context, user),
+      body: Consumer<AuthProvider>(
+        builder: (context, authProvider, child) {
+          final UserModel? user = authProvider.user;
+
+          return user == null
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Memuat data pengguna...'),
+                    ],
+                  ),
+                )
+              : buildProfileBody(context, user, authProvider);
+        },
+      ),
     );
   }
 
   // Widget terpisah untuk membangun konten profil
-  Widget buildProfileBody(BuildContext context, UserModel user) {
+  Widget buildProfileBody(
+    BuildContext context,
+    UserModel user,
+    AuthProvider authProvider,
+  ) {
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
         // Header Profil dengan Avatar
         Center(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 50,
                 backgroundColor: AppTheme.primaryColor,
-                child: Icon(Icons.person, size: 60),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                // 3. Tampilkan Nama Lengkap sebagai judul utama
-                user.nama,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+                child: Text(
+                  user.nama.isNotEmpty ? user.nama.substring(0, 1) : 'U',
+                  style: const TextStyle(fontSize: 38.0, color: Colors.white),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(width: 45),
+                  Text(
+                    user.nama,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                    onPressed: () => _showEditNameDialog(context, authProvider),
+                  ),
+                ],
+              ),
               Text(
                 // 4. Tampilkan Email di bawah nama
                 user.email,

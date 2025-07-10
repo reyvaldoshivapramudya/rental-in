@@ -132,6 +132,33 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  /// Memperbarui nama dari user yang sedang login.
+  Future<bool> updateUserName(String newName) async {
+    // Pastikan ada user yang sedang login
+    if (_user == null) return false;
+
+    try {
+      // 1. Update nama di dokumen Firestore
+      await _firestore.collection('users').doc(_user!.uid).update({
+        'nama': newName,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // 2. Buat object user baru dengan nama yang sudah diupdate
+      //    Penting agar data lokal di aplikasi ikut berubah
+      _user = _user!.copyWith(nama: newName);
+
+      // 3. Beri tahu semua widget yang mendengarkan bahwa ada perubahan
+      notifyListeners();
+
+      return true;
+    } catch (e) {
+      // Handle error jika diperlukan
+      print('Error updating user name: $e');
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     _isLoading = true;
     notifyListeners();

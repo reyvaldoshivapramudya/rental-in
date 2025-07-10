@@ -5,6 +5,7 @@ import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:rentalin/app/config/theme.dart';
 import 'package:rentalin/app/providers/sewa_provider.dart';
+import 'package:rentalin/app/providers/user_provider.dart';
 import 'package:rentalin/app/ui/screens/splash_screen.dart';
 import 'app/providers/auth_provider.dart';
 import 'app/providers/motor_provider.dart';
@@ -34,6 +35,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => MotorProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(
           create: (context) =>
               SewaProvider(Provider.of<AuthProvider>(context, listen: false)),

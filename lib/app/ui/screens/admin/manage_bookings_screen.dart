@@ -16,13 +16,29 @@ class ManageBookingsScreen extends StatefulWidget {
 }
 
 class _ManageBookingsScreenState extends State<ManageBookingsScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('id_ID', null);
+
+    // Listener untuk memperbarui UI saat user mengetik
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchBookings(context);
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _fetchBookings(BuildContext context) {
@@ -37,51 +53,112 @@ class _ManageBookingsScreenState extends State<ManageBookingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Manajemen Penyewaan')),
-      body: Consumer<SewaProvider>(
-        builder: (context, sewaProvider, child) {
-          if (sewaProvider.isLoading && sewaProvider.sewaList.isEmpty) {
-            return const LoadingWidget();
-          }
-
-          if (sewaProvider.sewaList.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: _onRefresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.7,
-                    child: const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.history, size: 80, color: Colors.grey),
-                          SizedBox(height: 16),
-                          Text(
-                            'Belum ada penyewaan masuk.',
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+      body: Column(
+        children: [
+          // ✨ WIDGET PENCARIAN ✨
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Cari Nama Penyewa atau Motor',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                // Tambahkan tombol untuk clear text
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      )
+                    : null,
               ),
-            );
-          }
+            ),
+          ),
+          Expanded(
+            child: Consumer<SewaProvider>(
+              builder: (context, sewaProvider, child) {
+                if (sewaProvider.isLoading && sewaProvider.sewaList.isEmpty) {
+                  return const LoadingWidget();
+                }
 
-          return RefreshIndicator(
-            onRefresh: _onRefresh,
-            child: ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: sewaProvider.sewaList.length,
-              itemBuilder: (context, index) {
-                final sewa = sewaProvider.sewaList[index];
-                return BookingCard(sewa: sewa);
+                // ✨ LOGIKA FILTER DI SINI ✨
+                final List<SewaModel> allBookings = sewaProvider.sewaList;
+                final List<SewaModel> filteredBookings = allBookings.where((
+                  sewa,
+                ) {
+                  final query = _searchQuery.toLowerCase();
+                  final renterName = sewa.detailUser?.nama.toLowerCase() ?? '';
+                  final motorName = sewa.detailMotor?.nama.toLowerCase() ?? '';
+
+                  return renterName.contains(query) ||
+                      motorName.contains(query);
+                }).toList();
+
+                if (filteredBookings.isEmpty) {
+                  return Center(
+                    child: Text(
+                      _searchQuery.isNotEmpty
+                          ? 'Tidak ada hasil untuk "$_searchQuery".'
+                          : 'Belum ada pesanan masuk.',
+                    ),
+                  );
+                }
+
+                if (sewaProvider.sewaList.isEmpty) {
+                  return RefreshIndicator(
+                    onRefresh: _onRefresh,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.7,
+                          child: const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.history,
+                                  size: 80,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Belum ada penyewaan masuk.',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: _onRefresh,
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: filteredBookings
+                        .length, // Gunakan daftar yang sudah difilter
+                    itemBuilder: (context, index) {
+                      final sewa =
+                          filteredBookings[index]; // Gunakan daftar yang sudah difilter
+                      return BookingCard(sewa: sewa);
+                    },
+                  ),
+                );
               },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -147,94 +224,56 @@ class BookingCard extends StatelessWidget {
         children: [
           FilledButton.icon(
             onPressed: () async {
-              final result = await showDialog<Map<String, dynamic>>(
+              // Hanya minta tanggal pengembalian dari admin
+              final DateTime? tanggalPengembalian = await showDatePicker(
                 context: context,
-                builder: (context) {
-                  final dendaController = TextEditingController();
-                  final tanggalController = TextEditingController(
-                    text: DateFormat('yyyy-MM-dd').format(DateTime.now()),
-                  );
+                initialDate: DateTime.now(),
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2100),
+                helpText: 'Pilih Tanggal Pengembalian',
+              );
 
-                  return AlertDialog(
-                    title: const Text('Selesaikan Sewa'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Masukkan tanggal pengembalian aktual dan denda jika ada.',
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: tanggalController,
-                          readOnly: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Tanggal Pengembalian Aktual',
-                            border: OutlineInputBorder(),
-                          ),
-                          onTap: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: DateTime.now(),
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime(2100),
-                            );
-                            if (picked != null) {
-                              tanggalController.text = DateFormat(
-                                'yyyy-MM-dd',
-                              ).format(picked);
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: dendaController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Total Denda (Rp)',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ],
+              // Jika admin memilih tanggal
+              if (tanggalPengembalian != null) {
+                // Tampilkan dialog konfirmasi sederhana
+                final bool? confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Konfirmasi Penyelesaian'),
+                    content: Text(
+                      'Anda yakin ingin menyelesaikan sewa untuk motor "${sewa.detailMotor?.nama ?? ''}"? Denda akan dihitung otomatis.',
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => Navigator.of(ctx).pop(false),
                         child: const Text('Batal'),
                       ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context, {
-                            'tanggalPengembalianAktual': tanggalController.text,
-                            'totalDenda': dendaController.text,
-                          });
-                        },
-                        child: const Text('Selesai'),
+                      FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: const Text('Yakin'),
                       ),
                     ],
-                  );
-                },
-              );
+                  ),
+                );
 
-              if (result != null) {
-                final tanggalStr = result['tanggalPengembalianAktual'];
-                final totalDendaStr = result['totalDenda'];
-                final tanggal = DateTime.tryParse(tanggalStr);
-                final totalDenda = int.tryParse(totalDendaStr) ?? 0;
-
-                if (tanggal != null) {
+                if (confirmed == true) {
+                  // Panggil fungsi selesaikanSewa TANPA mengirim 'totalDenda'.
+                  // Ini akan memicu perhitungan otomatis di provider.
                   await sewaProvider.selesaikanSewa(
                     sewa.id,
                     sewa.motorId,
-                    tanggalPengembalianAktual: tanggal,
-                    totalDenda: totalDenda > 0 ? totalDenda : null,
+                    tanggalPengembalianAktual: tanggalPengembalian,
+                    totalDenda: null, // ✨ Kirim null agar dihitung otomatis
                   );
 
-                  // ✅ Kirim notifikasi penyelesaian sewa ke user
+                  // ✅ Kirim notifikasi penyelesaian sewa ke user (logika ini sudah benar)
                   final playerId = sewa.detailUser?.playerId;
                   if (playerId != null && playerId.isNotEmpty) {
+                    final firestoreService =
+                        FirestoreService(); // Pastikan bisa diakses
                     await firestoreService.sendNotificationToUser(
                       playerId,
-                      'Penyewaan Selesai',
+                      'Sewa Selesai',
                       'Terima kasih, sewa Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} telah selesai. Jangan lupa nanti sewa lagi ya!👋',
                     );
                   }
@@ -270,15 +309,35 @@ class BookingCard extends StatelessWidget {
             _buildHeader(context),
             const Divider(),
             Text('Penyewa: ${sewa.detailUser?.nama ?? 'Nama Penyewa'}'),
-            Text('Telepon: ${sewa.detailUser?.nomorTelepon ?? 'No. Telp'}'),
+            // ... (info penyewa dan tanggal lainnya)
             const SizedBox(height: 8),
-            Text('Sewa: ${dateFormat.format(sewa.tanggalSewa)}'),
-            Text('Kembali: ${dateFormat.format(sewa.tanggalKembali)}'),
-            const SizedBox(height: 8),
-            Text(
-              'Total Biaya: Rp ${sewa.totalBiaya}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+
+            // ✨ GUNAKAN LOGIKA KONDISIONAL UNTUK MENAMPILKAN BIAYA ✨
+            // Jika booking sudah selesai dan ada denda, tampilkan rinciannya.
+            if (sewa.statusPemesanan == StatusPemesanan.selesai &&
+                (sewa.totalDenda ?? 0) > 0)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Biaya Sewa: Rp ${sewa.totalBiaya}'),
+                  Text(
+                    'Denda: Rp ${sewa.totalDenda}',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                  const Divider(thickness: 1, height: 12),
+                  Text(
+                    'Total Akhir: Rp ${sewa.biayaAkhir}', // ⬅️ Gunakan getter baru
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              )
+            else
+              // Jika tidak, tampilkan total biaya sewa seperti biasa.
+              Text(
+                'Total Biaya: Rp ${sewa.totalBiaya}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: _buildActionButtons(context),
