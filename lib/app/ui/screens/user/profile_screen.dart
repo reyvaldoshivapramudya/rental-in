@@ -29,7 +29,7 @@ class ProfileScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Batal'),
+              child: const Text('Batal', style: TextStyle(color: Colors.red)),
             ),
             FilledButton(
               onPressed: () async {
@@ -45,7 +45,10 @@ class ProfileScreen extends StatelessWidget {
                   Navigator.of(ctx).pop();
                 }
               },
-              child: const Text('Simpan'),
+              child: const Text(
+                'Simpan',
+                style: TextStyle(color: Colors.black),
+              ),
             ),
           ],
         );
