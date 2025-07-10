@@ -191,9 +191,6 @@ class HistoryCard extends StatelessWidget {
                         sewa.detailMotor?.nama ?? 'Nama Motor',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 4),
-                      // Teks 'Total' kita pindahkan ke bawah agar lebih detail
-                      Text('ID Pesanan: ${sewa.id.substring(0, 6)}...'),
                     ],
                   ),
                 ),
