@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rentalin/app/data/models/user_model.dart';
@@ -58,6 +59,35 @@ class UserProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Mengubah status blokir pengguna di Firestore dan Firebase Auth.
+  Future<bool> toggleBlockStatus(String uid, bool isCurrentlyBlocked) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final bool newBlockStatus = !isCurrentlyBlocked;
+
+      // KITA HANYA MENGUBAH FLAG DI FIRESTORE UNTUK SAAT INI
+      await _firestore.collection('users').doc(uid).update({
+        'isBlocked': newBlockStatus,
+      });
+
+      // Perbarui daftar lokal untuk me-refresh UI secara instan
+      final index = _renters.indexWhere((user) => user.uid == uid);
+      if (index != -1) {
+        _renters[index] = _renters[index].copyWith(isBlocked: newBlockStatus);
+      }
+
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      debugPrint("Error toggling block status: $e");
       return false;
     } finally {
       _isLoading = false;

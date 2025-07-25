@@ -117,29 +117,132 @@ class RenterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = context.read<UserProvider>();
+    final titleColor = renter.isBlocked ? Colors.red : Colors.black;
+    final cardColor = renter.isBlocked
+        ? Colors.red.withOpacity(0.05)
+        : Colors.white;
+
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          child: Text(
-            renter.nama.substring(0, 1),
-            style: TextStyle(fontSize: 24.0),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      color: cardColor,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: renter.isBlocked ? Colors.red.shade100 : Colors.transparent,
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: titleColor.withOpacity(0.1),
+            child: Text(
+              renter.nama.isNotEmpty ? renter.nama.substring(0, 1) : '?',
+              style: TextStyle(color: titleColor, fontWeight: FontWeight.bold),
+            ),
           ),
-        ),
-        title: Text(
-          renter.nama,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(renter.email),
-        trailing: IconButton(
-          icon: const Icon(Icons.edit, color: Colors.blue),
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => RenterFormScreen(renter: renter),
+          title: Text(
+            renter.nama,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: titleColor,
+              decoration: renter.isBlocked ? TextDecoration.lineThrough : null,
+            ),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                renter.email,
+                style: TextStyle(color: titleColor.withOpacity(0.8)),
               ),
-            );
-          },
+              if (renter.isBlocked)
+                const Padding(
+                  padding: EdgeInsets.only(top: 4.0),
+                  child: Text(
+                    'DIBLOKIR',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Tombol Edit
+              IconButton(
+                icon: Icon(
+                  Icons.edit,
+                  color: renter.isBlocked ? Colors.grey : Colors.blue,
+                ),
+                tooltip: 'Edit Data Penyewa',
+                onPressed: renter.isBlocked
+                    ? null
+                    : () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => RenterFormScreen(renter: renter),
+                          ),
+                        );
+                      },
+              ),
+              // ✨ Switch diganti dengan IconButton ini ✨
+              IconButton(
+                icon: Icon(
+                  // Ubah ikon berdasarkan status blokir
+                  renter.isBlocked ? Icons.lock_open : Icons.block,
+                ),
+                color: renter.isBlocked
+                    ? Colors.green
+                    : Colors.red, // Ubah warna juga
+                tooltip: renter.isBlocked ? 'Buka Blokir' : 'Blokir',
+                onPressed: () {
+                  // Logika dialog konfirmasi sama seperti sebelumnya
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(
+                        renter.isBlocked
+                            ? 'Buka Blokir Pengguna?'
+                            : 'Blokir Pengguna?',
+                      ),
+                      content: Text(
+                        'Anda yakin ingin mengubah status untuk ${renter.nama}?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: const Text('Batal'),
+                        ),
+                        FilledButton(
+                          onPressed: () {
+                            Navigator.of(ctx).pop();
+                            userProvider.toggleBlockStatus(
+                              renter.uid,
+                              renter.isBlocked,
+                            );
+                          },
+                          style: FilledButton.styleFrom(
+                            backgroundColor: renter.isBlocked
+                                ? Colors.green
+                                : Colors.red,
+                          ),
+                          child: const Text('Ya, Lanjutkan'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

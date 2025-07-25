@@ -80,16 +80,32 @@ class AuthProvider with ChangeNotifier {
         email,
         password,
       );
+
       if (loggedInUser == null) {
         throw AuthException(
           message: "Email atau password yang Anda masukkan salah.",
         );
+      }
+
+      // TAMBAHAN: Periksa status blokir di Firestore setelah login berhasil
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(loggedInUser.uid)
+          .get();
+      if (userDoc.exists && (userDoc.data()?['isBlocked'] == true)) {
+        // Jika user diblokir, langsung logout lagi dari Firebase Auth
+        await _authService.signOut();
+        // Lempar error khusus yang akan ditangkap oleh UI
+        throw AuthException(
+          message:
+              'Maaf, Akun ${loggedInUser.nama} telah diblokir. Karena telah melanggar kebijakan dari perusahaan kami.',
+        );
       } else {
-        await savePlayerIdToFirestore(
-          loggedInUser.uid,
-        ); // 🔔 Simpan playerId saat login
+        // Jika tidak diblokir, lanjutkan simpan playerId
+        await savePlayerIdToFirestore(loggedInUser.uid);
       }
     } catch (e) {
+      // Rethrow akan meneruskan error (baik dari login gagal atau akun diblokir) ke UI
       rethrow;
     } finally {
       _isLoading = false;

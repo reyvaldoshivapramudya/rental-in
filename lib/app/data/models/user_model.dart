@@ -12,6 +12,7 @@ class UserModel extends Equatable {
   final String? playerId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final bool isBlocked;
 
   const UserModel({
     required this.uid,
@@ -23,6 +24,7 @@ class UserModel extends Equatable {
     this.playerId,
     this.createdAt,
     this.updatedAt,
+    this.isBlocked = false, 
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -40,6 +42,7 @@ class UserModel extends Equatable {
         playerId: data['playerId']?.toString(), // ⬅️ mapping Firestore
         createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
         updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+        isBlocked: data['isBlocked'] ?? false,
       );
     } catch (e) {
       throw Exception('Error parsing UserModel from Firestore: $e');
@@ -59,6 +62,7 @@ class UserModel extends Equatable {
           ? Timestamp.fromDate(createdAt!)
           : FieldValue.serverTimestamp(),
       'updatedAt': Timestamp.fromDate(now),
+      'isBlocked': isBlocked,
     };
   }
 
@@ -72,6 +76,7 @@ class UserModel extends Equatable {
     String? playerId, // ⬅️ tambah di copyWith
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isBlocked,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -83,6 +88,7 @@ class UserModel extends Equatable {
       playerId: playerId ?? this.playerId, // ⬅️ assign copyWith
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isBlocked: isBlocked ?? this.isBlocked,
     );
   }
 
