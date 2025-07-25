@@ -117,6 +117,7 @@ class FirestoreService {
           title: "Ada yang mau sewa motor nih!",
           message:
               "Ada sewa baru nih! dari ${sewa.detailUser?.nama ?? 'user'} yang harus dikonfirmasi🛒",
+          additionalData: {'target_screen': 'manage_bookings_screen'},
         );
         print('✅ Notifikasi sewa baru berhasil dikirim ke admin');
       } else {
@@ -247,13 +248,15 @@ class FirestoreService {
   Future<void> sendNotificationToUser(
     String playerId,
     String title,
-    String message,
-  ) async {
+    String message, {
+    Map<String, dynamic>? additionalData, // ✨ TAMBAHKAN PARAMETER INI
+  }) async {
     try {
       await OneSignalService.sendNotification(
         playerId: playerId,
         title: title,
         message: message,
+        additionalData: additionalData, // ✨ TERUSKAN PAYLOAD KE SERVICE
       );
     } catch (e) {
       print('Error sending notification: $e');

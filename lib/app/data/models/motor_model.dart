@@ -67,33 +67,6 @@ class MotorModel extends Equatable {
     };
   }
 
-  // Optional JSON parsing
-  factory MotorModel.fromJson(Map<String, dynamic> json) => MotorModel(
-        id: json['id'],
-        nama: json['nama'],
-        merek: json['merek'],
-        tahun: json['tahun'],
-        nomorPolisi: json['nomorPolisi'],
-        hargaSewa: json['hargaSewa'],
-        status: MotorStatus.fromString(json['status']),
-        gambarUrl: json['gambarUrl'],
-        createdAt: DateTime.tryParse(json['createdAt'] ?? ''),
-        updatedAt: DateTime.tryParse(json['updatedAt'] ?? ''),
-      );
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'nama': nama,
-        'merek': merek,
-        'tahun': tahun,
-        'nomorPolisi': nomorPolisi,
-        'hargaSewa': hargaSewa,
-        'status': status.value,
-        'gambarUrl': gambarUrl,
-        'createdAt': createdAt?.toIso8601String(),
-        'updatedAt': updatedAt?.toIso8601String(),
-      };
-
   MotorModel copyWith({
     String? id,
     String? nama,

@@ -77,7 +77,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Image.asset('assets/icon/icon.png', width: 200, height: 200),
+                      Image.asset(
+                        'assets/icon/icon.png',
+                        width: 200,
+                        height: 200,
+                      ),
                       const SizedBox(height: 16),
                       const Text(
                         'Selamat Datang di Boss Sewa Motor',
@@ -178,59 +182,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: const Text(
                               'Daftar di sini',
                               style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      const Divider(height: 32, color: Colors.grey),
-                      const Text(
-                        'Panduan Aplikasi',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          TextButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => PanduanUserScreen(),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.info_outline),
-                            label: const Text(
-                              'Panduan Penyewa',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                          TextButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => PanduanAdminScreen(),
-                                ),
-                              );
-                            },
-                            icon: const Icon(
-                              Icons.admin_panel_settings_outlined,
-                            ),
-                            label: const Text(
-                              'Panduan Admin',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                              ),
                             ),
                           ),
                         ],

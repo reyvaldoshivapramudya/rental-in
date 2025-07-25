@@ -6,11 +6,12 @@ class OneSignalService {
   static final String _restApiKey = dotenv.env['ONESIGNAL_REST_API_KEY']!;
   static final String _appId = dotenv.env['ONESIGNAL_APP_ID']!;
 
-  /// Mengirim notifikasi ke user berdasarkan OneSignal playerId (device id)
+  /// Mengirim notifikasi ke user berdasarkan OneSignal playerId.
   static Future<void> sendNotification({
     required String playerId,
     required String title,
     required String message,
+    Map<String, dynamic>? additionalData, // ✨ TAMBAHKAN PARAMETER INI
   }) async {
     const String url = 'https://onesignal.com/api/v1/notifications';
 
@@ -19,6 +20,8 @@ class OneSignalService {
       "include_player_ids": [playerId],
       "headings": {"en": title},
       "contents": {"en": message},
+      // ✨ TAMBAHKAN PAYLOAD JIKA ADA ✨
+      if (additionalData != null) "data": additionalData,
     };
 
     final headers = {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:rentalin/utils/auth_exception.dart';
 import '../../../providers/auth_provider.dart';
@@ -120,14 +121,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _namaController,
                       focusNode: _namaFocus,
                       textInputAction: TextInputAction.next,
+                      // Tambahkan input formatter untuk hanya memperbolehkan huruf dan spasi
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z ]')),
+                      ],
                       onFieldSubmitted: (_) {
                         FocusScope.of(context).requestFocus(_teleponFocus);
                       },
                       decoration: const InputDecoration(
                         labelText: 'Nama Lengkap',
                       ),
-                      validator: (v) =>
-                          v!.isEmpty ? 'Nama tidak boleh kosong' : null,
+                      // Perbarui validator untuk memeriksa pola input
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return 'Nama tidak boleh kosong';
+                        }
+                        // Regex untuk memastikan hanya berisi huruf dan spasi
+                        final nameRegex = RegExp(r'^[a-zA-Z ]+$');
+                        if (!nameRegex.hasMatch(v)) {
+                          return 'Nama hanya boleh mengandung huruf';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
                     TextFormField(

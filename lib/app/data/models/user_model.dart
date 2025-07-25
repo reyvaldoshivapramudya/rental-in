@@ -9,7 +9,7 @@ class UserModel extends Equatable {
   final UserRole role;
   final String nomorTelepon;
   final String alamat;
-  final String? playerId; // ⬅️ tambahkan field ini
+  final String? playerId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -20,7 +20,7 @@ class UserModel extends Equatable {
     required this.role,
     required this.nomorTelepon,
     required this.alamat,
-    this.playerId, // ⬅️ tambahkan di konstruktor
+    this.playerId,
     this.createdAt,
     this.updatedAt,
   });
@@ -61,30 +61,6 @@ class UserModel extends Equatable {
       'updatedAt': Timestamp.fromDate(now),
     };
   }
-
-  factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
-    uid: json['uid'],
-    nama: json['nama'],
-    email: json['email'],
-    role: UserRole.fromString(json['role']),
-    nomorTelepon: json['nomorTelepon'],
-    alamat: json['alamat'],
-    playerId: json['playerId'], // ⬅️ mapping JSON
-    createdAt: DateTime.tryParse(json['createdAt'] ?? ''),
-    updatedAt: DateTime.tryParse(json['updatedAt'] ?? ''),
-  );
-
-  Map<String, dynamic> toJson() => {
-    'uid': uid,
-    'nama': nama,
-    'email': email,
-    'role': role.value,
-    'nomorTelepon': nomorTelepon,
-    'alamat': alamat,
-    'playerId': playerId, // ⬅️ mapping JSON
-    'createdAt': createdAt?.toIso8601String(),
-    'updatedAt': updatedAt?.toIso8601String(),
-  };
 
   UserModel copyWith({
     String? uid,

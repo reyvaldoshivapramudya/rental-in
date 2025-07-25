@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rentalin/app/config/theme.dart';
+import 'package:rentalin/app/providers/navigation_provider.dart';
+import 'package:rentalin/app/ui/screens/panduan_user_screen.dart';
 import 'package:rentalin/app/ui/screens/user/developer_screen.dart';
 import 'package:rentalin/app/ui/screens/user/profile_screen.dart';
 import 'package:rentalin/app/ui/screens/user/tentang_screen.dart';
@@ -24,6 +26,30 @@ class _HomeScreenState extends State<HomeScreen> {
     MotorListTab(),
     HistoryScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Jalankan setelah frame pertama selesai dibangun
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handleNotificationNavigation();
+    });
+  }
+
+  // ✨ BUAT FUNGSI BARU UNTUK HANDLE NAVIGASI ✨
+  void _handleNotificationNavigation() {
+    final navProvider = context.read<NavigationProvider>();
+    final target = navProvider.targetRoute;
+
+    if (target == 'history_screen') {
+      // Cari tahu indeks dari HistoryScreen
+      const historyIndex = 1; // Berdasarkan urutan di _widgetOptions
+      _onItemTapped(historyIndex);
+
+      // Penting: Hapus target setelah digunakan agar tidak dieksekusi lagi
+      navProvider.clearTargetRoute();
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -171,7 +197,11 @@ class _MotorListTabState extends State<MotorListTab> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Image.asset('assets/icon/icon.png', width: 130, height: 130),
+                        Image.asset(
+                          'assets/icon/icon.png',
+                          width: 130,
+                          height: 130,
+                        ),
                       ],
                     ),
                   ),
@@ -196,6 +226,20 @@ class _MotorListTabState extends State<MotorListTab> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const DeveloperScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.help_outline,
+                  ), // Mengganti ikon agar sesuai
+                  title: const Text('Panduan Penyewa'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PanduanUserScreen(),
                       ),
                     );
                   },

@@ -191,7 +191,9 @@ class BookingCard extends StatelessWidget {
                 await firestoreService.sendNotificationToUser(
                   playerId,
                   'Penyewaan Ditolak',
-                  'Maaf, penyewaan Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} ditolak, karena tidak sesuai dengan kebijakan perusahaan🙏',
+                  'Maaf, penyewaan Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} ditolak.',
+                  // ✨ TAMBAHKAN PAYLOAD INI ✨
+                  additionalData: {'target_screen': 'history_screen'},
                 );
               }
             },
@@ -211,6 +213,8 @@ class BookingCard extends StatelessWidget {
                   playerId,
                   'Penyewaan Dikonfirmasi',
                   'Penyewaan Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} telah dikonfirmasi. Silakan lakukan pembayaran dan ambil motor sesuai jadwal🛵',
+                  // ✨ TAMBAHKAN PAYLOAD INI ✨
+                  additionalData: {'target_screen': 'history_screen'},
                 );
               }
             },
@@ -275,6 +279,7 @@ class BookingCard extends StatelessWidget {
                       playerId,
                       'Sewa Selesai',
                       'Terima kasih, sewa Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} telah selesai. Jangan lupa nanti sewa lagi ya!👋',
+                      additionalData: {'target_screen': 'history_screen'},
                     );
                   }
                 }
@@ -309,7 +314,7 @@ class BookingCard extends StatelessWidget {
             _buildHeader(context),
             const Divider(),
             Text('Penyewa: ${sewa.detailUser?.nama ?? 'Nama Penyewa'}'),
-            // ... (info penyewa dan tanggal lainnya)
+            Text('Alamat: ${sewa.detailUser?.alamat ?? 'Alamat Penyewa'}'),
             const SizedBox(height: 8),
 
             // ✨ GUNAKAN LOGIKA KONDISIONAL UNTUK MENAMPILKAN BIAYA ✨

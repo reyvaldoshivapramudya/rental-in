@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rentalin/app/config/theme.dart';
 import 'package:rentalin/app/ui/screens/admin/manage_renters_screen.dart';
+import 'package:rentalin/app/ui/screens/panduan_admin_screen.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/sewa_provider.dart';
 import 'motor_form_screen.dart';
@@ -118,6 +119,24 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: TextButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const PanduanAdminScreen()),
+                );
+              },
+              icon: const Icon(Icons.info_outline),
+              label: const Text(
+                'Panduan Admin',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -177,7 +196,7 @@ class DashboardCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(11.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,7 +206,7 @@ class DashboardCard extends StatelessWidget {
                 backgroundColor: color.withValues(alpha: 0.15),
                 child: Icon(icon, size: 28, color: color),
               ),
-              const Spacer(),
+              const SizedBox(height: 12.0),
               Text(
                 title,
                 style: const TextStyle(

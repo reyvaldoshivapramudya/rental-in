@@ -15,35 +15,57 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  late SewaProvider _sewaProvider;
+  // late SewaProvider _sewaProvider;
   String _selectedFilter = 'Semua';
+
+  // ✨ TAMBAHKAN FLAG UNTUK MENCEGAH FETCH BERULANG ✨
+  bool _didInitialFetch = false;
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('id_ID', null);
-    _sewaProvider = Provider.of<SewaProvider>(context, listen: false);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchHistory();
-    });
+    // _sewaProvider = Provider.of<SewaProvider>(context, listen: false);
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   _fetchHistory();
+    // });
   }
 
   Future<void> _fetchHistory() async {
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (!mounted) return;
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (user != null) {
-      _sewaProvider.fetchSewaForCurrentUser(user.uid);
+      // _sewaProvider.fetchSewaForCurrentUser(user.uid);
+      context.read<SewaProvider>().fetchSewaForCurrentUser(user.uid);
     }
   }
 
-  @override
-  void dispose() {
-    _sewaProvider.cancelUserSewaStream();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   _sewaProvider.cancelUserSewaStream();
+  //   super.dispose();
+  // }
 
   @override
   Widget build(BuildContext context) {
+     // context.watch() akan membuat widget ini rebuild saat status login berubah
+    final authProvider = context.watch<AuthProvider>();
+    final sewaProvider = context.read<SewaProvider>();
+
+    // ✨ LOGIKA FETCH REAKTIF ✨
+    // Jika user sudah login DAN fetch awal belum dilakukan
+    if (authProvider.user != null && !_didInitialFetch) {
+      // Tandai bahwa fetch akan dilakukan agar tidak berulang
+      _didInitialFetch = true;
+      // Gunakan addPostFrameCallback untuk memanggil fetch setelah build selesai
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        sewaProvider.fetchSewaForCurrentUser(authProvider.user!.uid);
+      });
+    }
+    // Jika user logout, reset flag agar bisa fetch lagi jika login kembali
+    if (authProvider.user == null) {
+      _didInitialFetch = false;
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Riwayat Penyewaan'),
@@ -76,6 +98,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
       body: Consumer<SewaProvider>(
         builder: (context, sewaProvider, child) {
+          // Jika user belum login, tampilkan pesan
+          if (authProvider.user == null) {
+            return const Center(child: Text('Silakan login untuk melihat riwayat.'));
+          }
+
           if (sewaProvider.isLoading && sewaProvider.userSewaList.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -106,7 +133,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           return RefreshIndicator(
             onRefresh: _fetchHistory,
             child: ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
+              // physics: const AlwaysScrollableScrollPhysics(),
               itemCount: filteredList.length,
               itemBuilder: (context, index) {
                 final sewa = filteredList[index];
