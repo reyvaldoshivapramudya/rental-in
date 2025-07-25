@@ -173,6 +173,7 @@ class FirestoreService {
     required DateTime tanggalPengembalianAktual,
     required String status,
     required int totalDenda,
+    required String alasan,
     required String userPlayerId, // ⬅️ tambahkan playerId user
   }) async {
     WriteBatch batch = _db.batch();
@@ -186,6 +187,7 @@ class FirestoreService {
         tanggalPengembalianAktual,
       ),
       'totalDenda': totalDenda,
+      'alasanPengembalian': alasan,
     });
 
     batch.update(motorRef, {'status': 'tersedia'});

@@ -335,6 +335,7 @@ class SewaProvider with ChangeNotifier {
     String sewaId,
     String motorId, {
     DateTime? tanggalPengembalianAktual,
+    required String alasan,
     int? totalDenda,
   }) async {
     _isLoading = true;
@@ -368,7 +369,8 @@ class SewaProvider with ChangeNotifier {
         tanggalPengembalianAktual: tanggalPengembalian,
         status: 'Selesai',
         totalDenda: totalDendaFinal,
-        userPlayerId: userPlayerId, // ⬅️ tambahkan ini
+        userPlayerId: userPlayerId,
+        alasan: alasan,
       );
 
       await _firestoreService.updateMotorStatus(motorId, MotorStatus.tersedia);

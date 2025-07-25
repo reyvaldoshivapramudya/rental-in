@@ -21,6 +21,7 @@ class SewaModel extends Equatable {
 
   final DateTime? tanggalPengembalianAktual;
   final int? totalDenda;
+  final String? alasanPengembalian;
 
   const SewaModel({
     required this.id,
@@ -36,6 +37,7 @@ class SewaModel extends Equatable {
     this.updatedAt,
     this.tanggalPengembalianAktual,
     this.totalDenda,
+    this.alasanPengembalian,
   });
 
   static UserModel _parseUserFromMap(Map<String, dynamic> data) {
@@ -127,6 +129,7 @@ class SewaModel extends Equatable {
         totalDenda: data['totalDenda'] != null
             ? (data['totalDenda'] as num).toInt()
             : null,
+        alasanPengembalian: data['alasanPengembalian'],
       );
     } catch (e) {
       throw Exception('Error parsing SewaModel from Firestore: $e');
@@ -156,6 +159,7 @@ class SewaModel extends Equatable {
           tanggalPengembalianAktual!,
         ),
       if (totalDenda != null) 'totalDenda': totalDenda,
+      if (alasanPengembalian != null) 'alasanPengembalian': alasanPengembalian,
     };
   }
 
@@ -173,6 +177,7 @@ class SewaModel extends Equatable {
     DateTime? updatedAt,
     DateTime? tanggalPengembalianAktual,
     int? totalDenda,
+    String? alasanPengembalian,
   }) {
     return SewaModel(
       id: id ?? this.id,
@@ -189,6 +194,7 @@ class SewaModel extends Equatable {
       tanggalPengembalianAktual:
           tanggalPengembalianAktual ?? this.tanggalPengembalianAktual,
       totalDenda: totalDenda ?? this.totalDenda,
+      alasanPengembalian: alasanPengembalian ?? this.alasanPengembalian,
     );
   }
 
@@ -214,5 +220,6 @@ class SewaModel extends Equatable {
     updatedAt,
     tanggalPengembalianAktual,
     totalDenda,
+    alasanPengembalian,
   ];
 }

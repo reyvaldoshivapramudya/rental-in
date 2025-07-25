@@ -182,17 +182,13 @@ class BookingCard extends StatelessWidget {
         children: [
           OutlinedButton(
             onPressed: () async {
-              // Panggil fungsi tolakPemesanan yang baru, cukup kirim object 'sewa'
               await sewaProvider.tolakPemesanan(sewa);
-
-              // ✅ Kirim notifikasi penolakan booking ke user
               final playerId = sewa.detailUser?.playerId;
               if (playerId != null && playerId.isNotEmpty) {
                 await firestoreService.sendNotificationToUser(
                   playerId,
                   'Penyewaan Ditolak',
                   'Maaf, penyewaan Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} ditolak.',
-                  // ✨ TAMBAHKAN PAYLOAD INI ✨
                   additionalData: {'target_screen': 'history_screen'},
                 );
               }
@@ -203,17 +199,13 @@ class BookingCard extends StatelessWidget {
           const SizedBox(width: 8),
           FilledButton(
             onPressed: () async {
-              // Panggil fungsi konfirmasiPemesanan yang baru, cukup kirim object 'sewa'
               await sewaProvider.konfirmasiPemesanan(sewa);
-
-              // ✅ Kirim notifikasi konfirmasi booking ke user
               final playerId = sewa.detailUser?.playerId;
               if (playerId != null && playerId.isNotEmpty) {
                 await firestoreService.sendNotificationToUser(
                   playerId,
                   'Penyewaan Dikonfirmasi',
-                  'Penyewaan Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} telah dikonfirmasi. Silakan lakukan pembayaran dan ambil motor sesuai jadwal🛵',
-                  // ✨ TAMBAHKAN PAYLOAD INI ✨
+                  'Penyewaan Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} telah dikonfirmasi.',
                   additionalData: {'target_screen': 'history_screen'},
                 );
               }
@@ -228,60 +220,107 @@ class BookingCard extends StatelessWidget {
         children: [
           FilledButton.icon(
             onPressed: () async {
-              // Hanya minta tanggal pengembalian dari admin
-              final DateTime? tanggalPengembalian = await showDatePicker(
+              final result = await showDialog<Map<String, dynamic>>(
                 context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2100),
-                helpText: 'Pilih Tanggal Pengembalian',
+                builder: (ctx) {
+                  final formKey = GlobalKey<FormState>();
+                  final alasanController = TextEditingController();
+                  DateTime tanggalKembali = DateTime.now();
+
+                  return StatefulBuilder(
+                    builder: (context, setState) {
+                      return AlertDialog(
+                        title: const Text('Selesaikan Sewa'),
+                        content: Form(
+                          key: formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: const Text(
+                                  'Tanggal Pengembalian Aktual',
+                                ),
+                                subtitle: Text(
+                                  DateFormat(
+                                    'd MMMM yyyy',
+                                  ).format(tanggalKembali),
+                                ),
+                                trailing: const Icon(Icons.calendar_today),
+                                onTap: () async {
+                                  final pickedDate = await showDatePicker(
+                                    context: context,
+                                    initialDate: tanggalKembali,
+                                    firstDate: DateTime(2020),
+                                    lastDate: DateTime.now().add(
+                                      const Duration(days: 30),
+                                    ),
+                                  );
+                                  if (pickedDate != null) {
+                                    setState(() => tanggalKembali = pickedDate);
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: alasanController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Alasan/Catatan Pengembalian',
+                                  border: OutlineInputBorder(),
+                                  hintText: 'Contoh: Kembali lebih awal, dll.',
+                                ),
+                                maxLines: 3,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Alasan tidak boleh kosong.';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            child: const Text('Batal'),
+                          ),
+                          FilledButton(
+                            onPressed: () {
+                              if (formKey.currentState!.validate()) {
+                                Navigator.of(ctx).pop({
+                                  'tanggal': tanggalKembali,
+                                  'alasan': alasanController.text.trim(),
+                                });
+                              }
+                            },
+                            child: const Text('Selesaikan'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
               );
 
-              // Jika admin memilih tanggal
-              if (tanggalPengembalian != null) {
-                // Tampilkan dialog konfirmasi sederhana
-                final bool? confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Konfirmasi Penyelesaian'),
-                    content: Text(
-                      'Anda yakin ingin menyelesaikan sewa untuk motor "${sewa.detailMotor?.nama ?? ''}"? Denda akan dihitung otomatis.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text('Batal'),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        child: const Text('Yakin'),
-                      ),
-                    ],
-                  ),
+              if (result != null && result.isNotEmpty) {
+                final tanggal = result['tanggal'] as DateTime;
+                final alasan = result['alasan'] as String;
+
+                await sewaProvider.selesaikanSewa(
+                  sewa.id,
+                  sewa.motorId,
+                  tanggalPengembalianAktual: tanggal,
+                  alasan: alasan,
                 );
-
-                if (confirmed == true) {
-                  // Panggil fungsi selesaikanSewa TANPA mengirim 'totalDenda'.
-                  // Ini akan memicu perhitungan otomatis di provider.
-                  await sewaProvider.selesaikanSewa(
-                    sewa.id,
-                    sewa.motorId,
-                    tanggalPengembalianAktual: tanggalPengembalian,
-                    totalDenda: null, // ✨ Kirim null agar dihitung otomatis
+                final playerId = sewa.detailUser?.playerId;
+                if (playerId != null && playerId.isNotEmpty) {
+                  await firestoreService.sendNotificationToUser(
+                    playerId,
+                    'Sewa Selesai',
+                    'Terima kasih, sewa Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} telah selesai.',
+                    additionalData: {'target_screen': 'history_screen'},
                   );
-
-                  // ✅ Kirim notifikasi penyelesaian sewa ke user (logika ini sudah benar)
-                  final playerId = sewa.detailUser?.playerId;
-                  if (playerId != null && playerId.isNotEmpty) {
-                    final firestoreService =
-                        FirestoreService(); // Pastikan bisa diakses
-                    await firestoreService.sendNotificationToUser(
-                      playerId,
-                      'Sewa Selesai',
-                      'Terima kasih, sewa Anda untuk ${sewa.detailMotor?.nama ?? 'motor'} telah selesai. Jangan lupa nanti sewa lagi ya!👋',
-                      additionalData: {'target_screen': 'history_screen'},
-                    );
-                  }
                 }
               }
             },
@@ -315,29 +354,44 @@ class BookingCard extends StatelessWidget {
             const Divider(),
             Text('Penyewa: ${sewa.detailUser?.nama ?? 'Nama Penyewa'}'),
             Text('Alamat: ${sewa.detailUser?.alamat ?? 'Alamat Penyewa'}'),
+            Text('Tanggal Pinjam: ${dateFormat.format(sewa.tanggalSewa)}'),
+            Text('Tanggal Kembali: ${dateFormat.format(sewa.tanggalKembali)}'),
             const SizedBox(height: 8),
 
-            // ✨ GUNAKAN LOGIKA KONDISIONAL UNTUK MENAMPILKAN BIAYA ✨
-            // Jika booking sudah selesai dan ada denda, tampilkan rinciannya.
-            if (sewa.statusPemesanan == StatusPemesanan.selesai &&
-                (sewa.totalDenda ?? 0) > 0)
+            if (sewa.statusPemesanan == StatusPemesanan.selesai)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Biaya Sewa: Rp ${sewa.totalBiaya}'),
+                  if ((sewa.totalDenda ?? 0) > 0) ...[
+                    Text('Biaya Sewa: Rp ${sewa.totalBiaya}'),
+                    Text(
+                      'Denda: Rp ${sewa.totalDenda}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    const Divider(thickness: 1, height: 12),
+                  ],
                   Text(
-                    'Denda: Rp ${sewa.totalDenda}',
-                    style: const TextStyle(color: Colors.red),
+                    'Tanggal Kembali Aktual: ${sewa.tanggalPengembalianAktual != null ? dateFormat.format(sewa.tanggalPengembalianAktual!) : '-'}',
                   ),
-                  const Divider(thickness: 1, height: 12),
                   Text(
-                    'Total Akhir: Rp ${sewa.biayaAkhir}', // ⬅️ Gunakan getter baru
+                    'Total Akhir: Rp ${sewa.biayaAkhir}',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
+                  if (sewa.alasanPengembalian != null &&
+                      sewa.alasanPengembalian!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        'Catatan: ${sewa.alasanPengembalian}',
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ),
                 ],
               )
             else
-              // Jika tidak, tampilkan total biaya sewa seperti biasa.
               Text(
                 'Total Biaya: Rp ${sewa.totalBiaya}',
                 style: const TextStyle(fontWeight: FontWeight.bold),
